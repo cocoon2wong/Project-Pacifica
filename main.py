@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-08 21:47:08
+@LastEditTime: 2024-10-09 14:41:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,6 +13,7 @@ import sys
 import torch
 
 import qpid
+import resonance
 
 # Only for debug
 try:
