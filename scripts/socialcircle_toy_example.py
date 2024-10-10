@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-07-01 10:46:36
+@LastEditTime: 2024-10-09 19:05:19
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -23,7 +23,6 @@ from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
 sys.path.insert(0, os.path.abspath('.'))
 
 import qpid
-import socialCircle
 from main import main
 from qpid.args import TEMPORARY, EmptyArgs
 from qpid.constant import DATASET_CONFIGS, INPUT_TYPES
@@ -717,7 +716,8 @@ if __name__ == '__main__':
     Init the Training Structure
     """
     def args(path): return ['main.py',
-                            '--sc', path,
+                            '--model', 'MKII',
+                            '--loads', f'{path},speed',
                             '-bs', '4000',
                             '--test_mode', 'one',
                             '--draw_full_neighbors', '1'] + sys.argv
