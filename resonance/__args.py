@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-09 18:17:31
+@LastEditTime: 2024-10-09 19:42:29
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -40,7 +40,8 @@ class ResonanceArgs(EmptyArgs):
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """
-        return self._arg('T', 'fft', argtype=STATIC, short_name='T')
+        return self._arg('T', 'fft', argtype=STATIC, short_name='T',
+                         desc_in_model_summary='Transform type (trajectory)')
 
     @property
     def Tr(self) -> str:
@@ -54,7 +55,8 @@ class ResonanceArgs(EmptyArgs):
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """
-        return self._arg('Tr', 'fft', argtype=STATIC, short_name='Tr')
+        return self._arg('Tr', 'fft', argtype=STATIC, short_name='Tr',
+                         desc_in_model_summary='Transform type (resonance)')
 
     @property
     def interp(self) -> str:
@@ -64,6 +66,10 @@ class ResonanceArgs(EmptyArgs):
         speed interpolation).
         """
         return self._arg('interp', 'speed', argtype=STATIC)
+    
+    @property
+    def no_interaction(self) -> int:
+        return self._arg('no_interaction', 0, argtype=TEMPORARY)
 
     def _init_all_args(self):
         super()._init_all_args()
