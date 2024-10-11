@@ -14,9 +14,9 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 import qpid
-import socialCircle
+import resonance
 from qpid.mods import vis
-from scripts import socialcircle_toy_example
+from scripts import toy_example
 
 TARGET_FILE = './README.md'
 

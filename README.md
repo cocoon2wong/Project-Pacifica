@@ -1,7 +1,6 @@
 # Project-Pacifica
 🌴
 <!-- DO NOT CHANGE THIS LINE -->
-
 ### Basic Args
 
 - `--K_train`: type=`int`, argtype=`static`.
@@ -141,6 +140,36 @@
   The default value is `0`.
 - `--verbose` (short for `-v`): type=`int`, argtype=`temporary`.
   Controls whether to print verbose logs and outputs to the terminal. 
+  The default value is `0`.
+
+### Resonance Args
+
+- `--Kc`: type=`int`, argtype=`static`.
+  The number of style channels in `Agent` model. 
+  The default value is `20`.
+- `--T` (short for `-T`): type=`str`, argtype=`static`.
+  Transformation type used to compute trajectory spectrums on the ego agents. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  The default value is `fft`.
+- `--Tr` (short for `-Tr`): type=`str`, argtype=`static`.
+  Transformation type used to compute trajectory spectrums on all neighbor agents for modeling social interactions. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  The default value is `fft`.
+- `--compute_non_social_bias`: type=`int`, argtype=`static`.
+ (Working in process)
+  The default value is `1`.
+- `--do_intervention`: type=`int`, argtype=`static`.
+ (Working in process)
+  The default value is `0`.
+- `--interp`: type=`str`, argtype=`static`.
+  Type of interpolation method used to compute bias loss. It accepts `linear` (for linear interpolation) and `speed` (for linear speed interpolation). 
+  The default value is `speed`.
+- `--no_interaction`: type=`int`, argtype=`temporary`.
+ (Working in process)
+  The default value is `0`.
+- `--partitions`: type=`int`, argtype=`static`.
+  The number of partitions when computing the angle-based feature. 
+  The default value is `-1`.
+- `--temp_fix`: type=`int`, argtype=`temporary`.
+ (Working in process)
   The default value is `0`.
 
 ### Visualization Args
