@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-09 19:05:19
+@LastEditTime: 2024-10-11 11:18:03
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -602,11 +602,11 @@ class SocialCircleToy():
             return
 
         # Print the SocialCircle
-        try:
-            sc = self.outputs[1][1].numpy()[0]
-            social_circle.config(text=str(sc.T))
-        except:
-            pass
+        # try:
+        #     sc = self.outputs[1][1].numpy()[0]
+        #     social_circle.config(text=str(sc.T))
+        # except:
+        #     pass
 
         # Print all neighbors' angles
         # count = self.get_neighbor_count(self.inputs[self.get_input_index(NEI)])
@@ -791,9 +791,9 @@ if __name__ == '__main__':
             column=0, row=(i_r := i_r + 1))
         model_path.grid(column=1, row=i_r)
 
-        tk.Label(RF, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-            column=0, row=(i_r := i_r + 1))
-        sc.grid(column=1, row=i_r)
+        # tk.Label(RF, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+        #     column=0, row=(i_r := i_r + 1))
+        # sc.grid(column=1, row=i_r)
 
         # tk.Label(RF, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
         #     column=0, row=(i_r := i_r + 1))
