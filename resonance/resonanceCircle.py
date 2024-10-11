@@ -63,7 +63,7 @@ class ResonanceCircle(torch.nn.Module):
         ego_r = (ego_traj_2d - ego_traj_2d[..., -1:, :])[..., None, :, :]
 
         # Embed trajectories (ego + neighbor) together and then split them
-        f_pack = self.tre(torch.concat([nei_r, ego_r], dim=-3))
+        f_pack = self.tre(torch.concat([ego_r, nei_r], dim=-3))
         f_ego = f_pack[..., :1, :, :]
         f_nei = f_pack[..., 1:, :, :]
 
