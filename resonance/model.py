@@ -2,23 +2,19 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 10:49:50
+@LastEditTime: 2024-10-11 19:20:22
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
 
 import torch
 
-from qpid.args import Args
-from qpid.base import BaseManager
 from qpid.constant import INPUT_TYPES
 from qpid.model import Model, layers
 from qpid.training import Structure
-from qpid.training.loss import l2
 from qpid.utils import INIT_POSITION
 
 from .__args import ResonanceArgs
-from .__loss import InterventionLoss
 from .linearDiffEncoding import LinearDiffEncoding
 from .reSelfBias import ReSelfBias
 from .resonanceBias import ResonanceBias
@@ -108,7 +104,15 @@ class ResonanceModel(Model):
         y_re_bias = self.b2(ego_traj - ego_traj_linear,
                             f_ego_diff, f_re, training)
 
-        return [y_linear[..., None, :, :] + y_linear_bias + y_re_bias,
+        y = y_linear[..., None, :, :]
+
+        if not self.re_args.no_linear_bias:
+            y = y + y_linear_bias
+
+        if not self.re_args.no_re_bias:
+            y = y + y_re_bias
+
+        return [y,
                 y_linear_bias,
                 y_re_bias]
 
@@ -124,19 +128,9 @@ class ResonanceModel(Model):
             nei_traj = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Forward the model
-        y, y_linear_bias, y_interaction = self._compute(
-            ego_traj, nei_traj, training)
+        y, _bias1, _bias2 = self._compute(ego_traj, nei_traj, training)
 
-        # Apply intervention on neighbor trajectories (if needed)
-        if self.re_args.do_intervention and (training or self.args.compute_loss):
-            # Compute counterfactual outputs
-            nei_c = self.create_empty_neighbors(ego_traj)
-            _, _, y_interaction_c = self._compute(ego_traj, nei_c, training,
-                                                  y_linear_bias=y_linear_bias)
-        else:
-            y_interaction_c = y_interaction
-
-        return y, y_interaction_c
+        return y
 
     def create_empty_neighbors(self, ego_traj: torch.Tensor):
         """
@@ -151,10 +145,3 @@ class ResonanceModel(Model):
 
 class ResonanceStructure(Structure):
     MODEL_TYPE = ResonanceModel
-
-    def __init__(self, args: list[str] | Args | None = None, manager: BaseManager | None = None, name='Train Manager'):
-        super().__init__(args, manager, name)
-
-        self.re_args = self.args.register_subargs(ResonanceArgs, 're_args')
-        if self.re_args.do_intervention:
-            self.loss.set({l2: 0.5, InterventionLoss: 0.5})
