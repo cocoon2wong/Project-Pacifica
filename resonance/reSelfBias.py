@@ -2,13 +2,12 @@
 @Author: Conghao Wong
 @Date: 2024-10-09 20:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-09 21:38:59
+@LastEditTime: 2024-10-11 11:03:54
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
 
 import torch
-from .__args import ResonanceArgs
 
 from qpid.args import Args
 from qpid.model import layers, transformer
@@ -16,12 +15,25 @@ from qpid.model.layers.interpolation import (LinearPositionInterpolation,
                                              LinearSpeedInterpolation)
 from qpid.model.layers.transfroms import _BaseTransformLayer
 
+from .__args import ResonanceArgs
 
-class IntentionModel(torch.nn.Module):
+
+class ReSelfBias(torch.nn.Module):
+    """
+    Self-Bias Layer
+    ---
+    It aims to predict the "clean" trajectory bias compared to the linear
+    future trajectories only according to the observed trajectory of the
+    ego agent.
+    """
+
     def __init__(self, Args: Args,
-                 T_ego_obs: _BaseTransformLayer,
-                 iT_ego_pred: _BaseTransformLayer,
+                 output_units: int,
+                 noise_units: int,
+                 transform_layer: _BaseTransformLayer,
+                 itransform_layer: _BaseTransformLayer,
                  *args, **kwargs) -> None:
+
         super().__init__(*args, **kwargs)
 
         self.args = Args
@@ -29,30 +41,20 @@ class IntentionModel(torch.nn.Module):
 
         # Layers
         # Transform layers (ego)
-        self.t1 = T_ego_obs
-        self.it1 = iT_ego_pred
-        
-        self.d = self.args.feature_dim
+        self.T_layer = transform_layer
+        self.iT_layer = itransform_layer
+
+        self.d = output_units
+        self.d_z = noise_units
         self.d_id = self.args.noise_depth
 
-        # Trajectory encoding (ego)
-        self.te = layers.TrajEncoding(self.t1.Oshape[-1], self.d//2,
-                                      torch.nn.ReLU,
-                                      transform_layer=self.t1)
-
         # Shapes
-        self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
-        self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
-
-        # Bilinear structure (outer product + pooling + fc)
-        # For trajectories
-        self.outer = layers.OuterLayer(self.d//2, self.d//2)
-        self.pooling = layers.MaxPooling2D((2, 2))
-        self.flatten = layers.Flatten(axes_num=2)
-        self.outer_fc = layers.Dense((self.d//4)**2, self.d//2, torch.nn.Tanh)
+        self.Tsteps_en, self.Tchannels_en = self.T_layer.Tshape
+        self.Tsteps_de, self.Tchannels_de = self.iT_layer.Tshape
 
         # Noise encoding
-        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
+        self.ie = layers.TrajEncoding(
+            self.d_id, self.d - self.d_z, torch.nn.Tanh)
 
         # Transformer is used as a feature extractor
         self.T = transformer.Transformer(
@@ -78,7 +80,7 @@ class IntentionModel(torch.nn.Module):
         self.decoder_fc2 = layers.Dense(self.d,
                                         self.Tsteps_de * self.Tchannels_de)
 
-        # Interpolation layers
+        # Interpolation layer
         match self.re_args.interp:
             case 'linear':
                 i_layer_type = LinearPositionInterpolation
@@ -89,30 +91,25 @@ class IntentionModel(torch.nn.Module):
 
         self.interp_layer = i_layer_type()
 
-    def forward(self, ego_traj: torch.Tensor,
+    def forward(self, ego_traj_linear: torch.Tensor,
+                f_ego_diff: torch.Tensor,
                 output_pred_steps: torch.Tensor,
                 training=None, mask=None, *args, **kwargs):
-
-        # Trajectory embedding and encoding
-        f = self.te(ego_traj)
-        f = self.outer(f, f)
-        f = self.pooling(f)
-        f = self.flatten(f)
-        f_traj = self.outer_fc(f)       # (batch, steps, d/2)
 
         # Sampling random noise vectors
         all_predictions = []
         repeats = self.args.K_train if training else self.args.K
-        traj_targets = self.t1(ego_traj)
+        traj_targets = self.T_layer(ego_traj_linear)
 
+        # First predict the overall trajectory-bias (on several keypoints)
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d)
             z = torch.normal(mean=0, std=1,
-                             size=list(f_traj.shape[:-1]) + [self.d_id])
-            f_z = self.ie(z.to(ego_traj.device))
+                             size=list(f_ego_diff.shape[:-1]) + [self.d_id])
+            f_z = self.ie(z.to(ego_traj_linear.device))
 
             # (batch, steps, 2*d)
-            f_final = torch.concat([f_traj, f_z], dim=-1)
+            f_final = torch.concat([f_ego_diff, f_z], dim=-1)
 
             # Transformer outputs' shape is (batch, steps, d)
             f_tran, _ = self.T(inputs=f_final,
@@ -130,13 +127,17 @@ class IntentionModel(torch.nn.Module):
             y = torch.reshape(y, list(y.shape[:-1]) +
                               [self.Tsteps_de, self.Tchannels_de])
 
-            y = self.it1(y)
+            y = self.iT_layer(y)
             all_predictions.append(y)
 
-        # (batch, K, n_key, dim)
+        # Stack random output -> (batch, K, n_key, dim)
         y_clean = torch.concat(all_predictions, dim=-3)
-        y_clean_interp = self.interp(output_pred_steps, y_clean, ego_traj)
-        return y_clean_interp, f_traj
+
+        # Interpolating keypoints -> (batch, K, pred, dim)
+        y_clean_interp = self.interp(index=output_pred_steps,
+                                     value=y_clean,
+                                     obs_traj=ego_traj_linear)
+        return y_clean_interp
 
     def interp(self, index: torch.Tensor,
                value: torch.Tensor,

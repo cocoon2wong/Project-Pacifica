@@ -1,0 +1,89 @@
+"""
+@Author: Conghao Wong
+@Date: 2024-10-10 17:24:30
+@LastEditors: Conghao Wong
+@LastEditTime: 2024-10-11 10:21:56
+@Github: https://cocoon2wong.github.io
+@Copyright 2024 Conghao Wong, All Rights Reserved.
+"""
+
+import torch
+
+from qpid.model import layers
+from qpid.model.layers.transfroms import _BaseTransformLayer
+
+
+class LinearDiffEncoding(torch.nn.Module):
+    """
+    Linear Difference Encoding Layer
+    ---
+    It is used to encode the difference between the observed trajectory and
+    the corresponding linear (least square) trajectory of the ego agent.
+    """
+
+    def __init__(self, obs_frames: int,
+                 pred_frames: int,
+                 output_units: int,
+                 transform_layer: _BaseTransformLayer,
+                 *args, **kwargs) -> None:
+
+        super().__init__(*args, **kwargs)
+
+        self.d = output_units
+        self.T_layer = transform_layer
+
+        self.obs_frames = obs_frames
+        self.pred_frames = pred_frames
+
+        # Linear prediction layer
+        self.linear = layers.LinearLayerND(self.obs_frames,
+                                           self.pred_frames,
+                                           return_full_trajectory=True)
+
+        # Trajectory encoding (ego)
+        self.te = layers.TrajEncoding(self.T_layer.Oshape[-1], self.d,
+                                      torch.nn.ReLU,
+                                      transform_layer=self.T_layer)
+
+        # Linear trajectory encoding
+        self.le = layers.TrajEncoding(self.T_layer.Oshape[-1], self.d,
+                                      torch.nn.ReLU,
+                                      transform_layer=self.T_layer)
+
+        # Bilinear structure (outer product + pooling + fc)
+        self.outer = layers.OuterLayer(self.d, self.d)
+        self.pooling = layers.MaxPooling2D((2, 2))
+        self.flatten = layers.Flatten(axes_num=2)
+        self.outer_fc = layers.Dense((self.d//2)**2, self.d, torch.nn.Tanh)
+        self.outer_fc_linear = layers.Dense((self.d//2)**2, self.d,
+                                            torch.nn.Tanh)
+
+    def forward(self, ego_traj: torch.Tensor, *args, **kwargs):
+        # Compute the linear trajectory
+        traj_linear = self.linear(ego_traj)      # (batch, obs+pred, dim)
+
+        # Move the linear trajectory to make it intersect with the obs trajectory
+        # at the current observation moment (by moving it to (0. 0)).
+        _t = self.obs_frames
+        traj_linear = traj_linear - traj_linear[..., _t-1:_t, :]
+        ego_traj_linear = traj_linear[..., :_t, :]
+        ego_pred_linear = traj_linear[..., _t:, :]
+
+        # Trajectory embedding and encoding
+        f = self.te(ego_traj)
+        f = self.outer(f, f)
+        f = self.pooling(f)
+        f = self.flatten(f)
+        f_ego = self.outer_fc(f)       # (batch, steps, d/2)
+
+        # Linear trajectory embedding and encoding
+        f_l = self.le(ego_traj_linear)
+        f_l = self.outer(f_l, f_l)
+        f_l = self.pooling(f_l)
+        f_l = self.flatten(f_l)
+        f_ego_linear = self.outer_fc_linear(f_l)       # (batch, steps, d/2)
+
+        f_ego_diff = f_ego - f_ego_linear    # ranged from (-2, 2)
+        f_ego_diff = f_ego_diff / 2           # ranged from (-1 ,1)
+
+        return f_ego_diff, ego_traj_linear, ego_pred_linear

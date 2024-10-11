@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-09 19:42:29
+@LastEditTime: 2024-10-11 11:15:28
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -66,10 +66,22 @@ class ResonanceArgs(EmptyArgs):
         speed interpolation).
         """
         return self._arg('interp', 'speed', argtype=STATIC)
-    
+
     @property
     def no_interaction(self) -> int:
         return self._arg('no_interaction', 0, argtype=TEMPORARY)
+
+    @property
+    def do_intervention(self) -> int:
+        return self._arg('do_intervention', 0, argtype=STATIC)
+
+    @property
+    def compute_non_social_bias(self) -> int:
+        return self._arg('compute_non_social_bias', 1, argtype=STATIC)
+
+    @property
+    def temp_fix(self) -> int:
+        return self._arg('temp_fix', 0, argtype=TEMPORARY)
 
     def _init_all_args(self):
         super()._init_all_args()
