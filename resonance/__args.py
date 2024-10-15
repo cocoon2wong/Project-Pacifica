@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 14:48:13
+@LastEditTime: 2024-10-15 15:22:11
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -72,17 +72,35 @@ class ResonanceArgs(EmptyArgs):
         return self._arg('no_interaction', 0, argtype=TEMPORARY)
 
     @property
-    def compute_non_social_bias(self) -> int:
-        return self._arg('compute_non_social_bias', 1, argtype=STATIC)
+    def learn_self_bias(self) -> int:
+        """
+        Choose whether to compute the self-bias term when training.
+        """
+        return self._arg('learn_self_bias', 1, argtype=STATIC,
+                         other_names=['compute_non_social_bias'],
+                         desc_in_model_summary='Predict self-bias trajectories')
 
     @property
-    def temp_fix(self) -> int:
-        return self._arg('temp_fix', 0, argtype=TEMPORARY)
-    
+    def learn_re_bias(self) -> int:
+        """
+        Choose whether to compute the re-bias term when training.
+        """
+        return self._arg('learn_re_bias', 1, argtype=STATIC,
+                         desc_in_model_summary='Predict resonance-bias trajectories')
+
+    @property
+    def use_original_socialcircle(self) -> int:
+        """
+        Choose to use the `ResonanceCircle` (default) or the original
+        `SocialCircle` when represent social interactions.
+        """
+        return self._arg('use_original_socialcircle', 0, argtype=STATIC,
+                         desc_in_model_summary='Use SocialCircle rather than ResonanceCircle')
+
     @property
     def no_linear_bias(self) -> int:
         return self._arg('no_linear_bias', 0, argtype=TEMPORARY)
-    
+
     @property
     def no_re_bias(self) -> int:
         return self._arg('no_re_bias', 0, argtype=TEMPORARY)

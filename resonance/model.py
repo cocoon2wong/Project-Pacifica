@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 19:20:22
+@LastEditTime: 2024-10-15 15:21:04
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -15,6 +15,7 @@ from qpid.training import Structure
 from qpid.utils import INIT_POSITION
 
 from .__args import ResonanceArgs
+from .__layers import SocialCircleLayer
 from .linearDiffEncoding import LinearDiffEncoding
 from .reSelfBias import ReSelfBias
 from .resonanceBias import ResonanceBias
@@ -55,18 +56,25 @@ class ResonanceModel(Model):
                                          transform_layer=self.t1)
 
         # Self-Bias Layer
-        if self.re_args.temp_fix or self.re_args.compute_non_social_bias:
+        if self.re_args.learn_self_bias:
             self.b1 = ReSelfBias(self.args,
                                  output_units=self.d,
                                  noise_units=self.d//2,
                                  transform_layer=self.t1,
                                  itransform_layer=self.it1)
 
+        if not self.re_args.learn_re_bias:
+            return
+
         # Resonance Circle Layer
-        self.rc = ResonanceCircle(partitions=self.re_args.partitions,
-                                  hidden_units=self.d,
-                                  output_units=self.d,
-                                  transform_layer=self.tr1)
+        if not self.re_args.use_original_socialcircle:
+            self.rc = ResonanceCircle(partitions=self.re_args.partitions,
+                                      hidden_units=self.d,
+                                      output_units=self.d,
+                                      transform_layer=self.tr1)
+        else:
+            self.rc = SocialCircleLayer(partitions=self.re_args.partitions,
+                                        output_units=self.d)
 
         # Resonance Bias Layer
         self.b2 = ResonanceBias(self.args,
@@ -80,7 +88,7 @@ class ResonanceModel(Model):
     def _compute(self, ego_traj: torch.Tensor,
                  nei_traj: torch.Tensor,
                  training=None,
-                 y_linear_bias=None):
+                 y_self_bias=None):
         """
         Implement the entire model on the given trajectories (ego + neighbors).
         """
@@ -89,31 +97,34 @@ class ResonanceModel(Model):
         f_ego_diff, ego_traj_linear, y_linear = self.linear(ego_traj)
 
         # Predict the self-bias trajectory
-        if self.re_args.compute_non_social_bias and y_linear_bias is None:
+        if self.re_args.learn_self_bias and y_self_bias is None:
             # Intention Branch
-            y_linear_bias = self.b1(ego_traj_linear, f_ego_diff,
-                                    self.output_pred_steps, training)
+            y_self_bias = self.b1(ego_traj_linear, f_ego_diff,
+                                  self.output_pred_steps, training)
         else:
-            y_linear_bias = 0
+            y_self_bias = 0
 
-        # Compute the ResonanceCircle to each ego agent
-        f_re = self.rc(self.picker.get_center(ego_traj),
-                       self.picker.get_center(nei_traj))
+        if self.re_args.learn_re_bias:
+            # Compute the ResonanceCircle to each ego agent
+            f_re = self.rc(self.picker.get_center(ego_traj),
+                           self.picker.get_center(nei_traj))
 
-        # Compute the resonance-bias trajectory
-        y_re_bias = self.b2(ego_traj - ego_traj_linear,
-                            f_ego_diff, f_re, training)
+            # Compute the resonance-bias trajectory
+            y_re_bias = self.b2(ego_traj - ego_traj_linear,
+                                f_ego_diff, f_re, training)
+        else:
+            y_re_bias = 0
 
         y = y_linear[..., None, :, :]
 
         if not self.re_args.no_linear_bias:
-            y = y + y_linear_bias
+            y = y + y_self_bias
 
         if not self.re_args.no_re_bias:
             y = y + y_re_bias
 
         return [y,
-                y_linear_bias,
+                y_self_bias,
                 y_re_bias]
 
     def forward(self, inputs: list[torch.Tensor], training=None, mask=None, *args, **kwargs):
