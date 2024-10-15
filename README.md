@@ -153,23 +153,29 @@
 - `--Tr` (short for `-Tr`): type=`str`, argtype=`static`.
   Transformation type used to compute trajectory spectrums on all neighbor agents for modeling social interactions. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `fft`.
-- `--compute_non_social_bias`: type=`int`, argtype=`static`.
- (Working in process)
-  The default value is `1`.
-- `--do_intervention`: type=`int`, argtype=`static`.
- (Working in process)
-  The default value is `0`.
 - `--interp`: type=`str`, argtype=`static`.
   Type of interpolation method used to compute bias loss. It accepts `linear` (for linear interpolation) and `speed` (for linear speed interpolation). 
   The default value is `speed`.
+- `--learn_re_bias`: type=`int`, argtype=`static`.
+  Choose whether to compute the re-bias term when training. 
+  The default value is `1`.
+- `--learn_self_bias`: type=`int`, argtype=`static`.
+  Choose whether to compute the self-bias term when training. 
+  The default value is `1`.
 - `--no_interaction`: type=`int`, argtype=`temporary`.
  (Working in process)
+  The default value is `0`.
+- `--no_re_bias`: type=`int`, argtype=`temporary`.
+  Ignoring the resonance-bias term when forecasting. It only works when testing. 
+  The default value is `0`.
+- `--no_self_bias`: type=`int`, argtype=`temporary`.
+  Ignoring the self-bias term when forecasting. It only works when testing. 
   The default value is `0`.
 - `--partitions`: type=`int`, argtype=`static`.
   The number of partitions when computing the angle-based feature. 
   The default value is `-1`.
-- `--temp_fix`: type=`int`, argtype=`temporary`.
- (Working in process)
+- `--use_original_socialcircle`: type=`int`, argtype=`static`.
+  Choose to use the `ResonanceCircle` (default) or the original `SocialCircle` when represent social interactions. 
   The default value is `0`.
 
 ### Visualization Args

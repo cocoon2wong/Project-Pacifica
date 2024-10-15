@@ -117,10 +117,10 @@ class ResonanceModel(Model):
 
         y = y_linear[..., None, :, :]
 
-        if not self.re_args.no_linear_bias:
+        if training or not self.re_args.no_self_bias:
             y = y + y_self_bias
 
-        if not self.re_args.no_re_bias:
+        if training or not self.re_args.no_re_bias:
             y = y + y_re_bias
 
         return [y,

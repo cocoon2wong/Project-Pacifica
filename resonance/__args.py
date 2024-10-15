@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-15 15:22:11
+@LastEditTime: 2024-10-15 15:34:56
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -98,11 +98,19 @@ class ResonanceArgs(EmptyArgs):
                          desc_in_model_summary='Use SocialCircle rather than ResonanceCircle')
 
     @property
-    def no_linear_bias(self) -> int:
-        return self._arg('no_linear_bias', 0, argtype=TEMPORARY)
+    def no_self_bias(self) -> int:
+        """
+        Ignoring the self-bias term when forecasting.
+        It only works when testing.
+        """
+        return self._arg('no_self_bias', 0, argtype=TEMPORARY)
 
     @property
     def no_re_bias(self) -> int:
+        """
+        Ignoring the resonance-bias term when forecasting.
+        It only works when testing.
+        """
         return self._arg('no_re_bias', 0, argtype=TEMPORARY)
 
     def _init_all_args(self):
