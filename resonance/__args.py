@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-15 15:34:56
+@LastEditTime: 2024-10-16 20:15:34
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -112,6 +112,10 @@ class ResonanceArgs(EmptyArgs):
         It only works when testing.
         """
         return self._arg('no_re_bias', 0, argtype=TEMPORARY)
+
+    @property
+    def encode_agent_types(self) -> int:
+        return self._arg('encode_agent_types', 0, argtype=STATIC)
 
     def _init_all_args(self):
         super()._init_all_args()

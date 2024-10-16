@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-15 15:21:04
+@LastEditTime: 2024-10-16 19:16:08
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -35,8 +35,13 @@ class ResonanceModel(Model):
         self.re_args = self.args.register_subargs(ResonanceArgs, 're_args')
 
         # Set model inputs
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
-                        INPUT_TYPES.NEIGHBOR_TRAJ)
+        if not self.re_args.encode_agent_types:
+            self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                            INPUT_TYPES.NEIGHBOR_TRAJ)
+        else:
+            self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                            INPUT_TYPES.NEIGHBOR_TRAJ,
+                            INPUT_TYPES.AGENT_TYPES)
 
         # Layers
         # Transform layers (ego)
@@ -53,7 +58,8 @@ class ResonanceModel(Model):
         self.linear = LinearDiffEncoding(obs_frames=self.args.obs_frames,
                                          pred_frames=self.args.pred_frames,
                                          output_units=self.d//2,
-                                         transform_layer=self.t1)
+                                         transform_layer=self.t1,
+                                         encode_agent_types=self.re_args.encode_agent_types)
 
         # Self-Bias Layer
         if self.re_args.learn_self_bias:
@@ -139,7 +145,41 @@ class ResonanceModel(Model):
             nei_traj = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Forward the model
-        y, _bias1, _bias2 = self._compute(ego_traj, nei_traj, training)
+        # Compute linear-difference features
+        if self.re_args.encode_agent_types:
+            agent_types = self.get_input(inputs, INPUT_TYPES.AGENT_TYPES)
+        else:
+            agent_types = None
+
+        f_ego_diff, ego_traj_linear, y_linear = self.linear(
+            ego_traj, agent_types)
+
+        # Predict the self-bias trajectory
+        if self.re_args.learn_self_bias:
+            # Intention Branch
+            y_self_bias = self.b1(ego_traj_linear, f_ego_diff,
+                                  self.output_pred_steps, training)
+        else:
+            y_self_bias = 0
+
+        if self.re_args.learn_re_bias:
+            # Compute the ResonanceCircle to each ego agent
+            f_re = self.rc(self.picker.get_center(ego_traj)[..., :2],
+                           self.picker.get_center(nei_traj)[..., :2])
+
+            # Compute the resonance-bias trajectory
+            y_re_bias = self.b2(ego_traj - ego_traj_linear,
+                                f_ego_diff, f_re, training)
+        else:
+            y_re_bias = 0
+
+        y = y_linear[..., None, :, :]
+
+        if training or not self.re_args.no_self_bias:
+            y = y + y_self_bias
+
+        if training or not self.re_args.no_re_bias:
+            y = y + y_re_bias
 
         return y
 

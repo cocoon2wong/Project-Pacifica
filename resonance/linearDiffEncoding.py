@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-10 17:24:30
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 10:21:56
+@LastEditTime: 2024-10-16 20:18:41
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -11,6 +11,7 @@ import torch
 
 from qpid.model import layers
 from qpid.model.layers.transfroms import _BaseTransformLayer
+from qpid.utils import MAX_TYPE_NAME_LEN
 
 
 class LinearDiffEncoding(torch.nn.Module):
@@ -25,6 +26,7 @@ class LinearDiffEncoding(torch.nn.Module):
                  pred_frames: int,
                  output_units: int,
                  transform_layer: _BaseTransformLayer,
+                 encode_agent_types: bool | int = False,
                  *args, **kwargs) -> None:
 
         super().__init__(*args, **kwargs)
@@ -34,6 +36,8 @@ class LinearDiffEncoding(torch.nn.Module):
 
         self.obs_frames = obs_frames
         self.pred_frames = pred_frames
+
+        self.encode_agent_types = encode_agent_types
 
         # Linear prediction layer
         self.linear = layers.LinearLayerND(self.obs_frames,
@@ -58,7 +62,14 @@ class LinearDiffEncoding(torch.nn.Module):
         self.outer_fc_linear = layers.Dense((self.d//2)**2, self.d,
                                             torch.nn.Tanh)
 
-    def forward(self, ego_traj: torch.Tensor, *args, **kwargs):
+        if self.encode_agent_types:
+            self.type_encoder = layers.Dense(MAX_TYPE_NAME_LEN, output_units,
+                                             torch.nn.Tanh)
+
+    def forward(self, ego_traj: torch.Tensor,
+                agent_types: torch.Tensor | None = None,
+                *args, **kwargs):
+
         # Compute the linear trajectory
         traj_linear = self.linear(ego_traj)      # (batch, obs+pred, dim)
 
@@ -85,5 +96,10 @@ class LinearDiffEncoding(torch.nn.Module):
 
         f_ego_diff = f_ego - f_ego_linear    # ranged from (-2, 2)
         f_ego_diff = f_ego_diff / 2           # ranged from (-1 ,1)
+
+        if self.encode_agent_types and (agent_types is not None):
+            f_type = self.type_encoder(
+                agent_types)[..., None, :]    # (batch, 1, d)
+            f_ego_diff = f_ego_diff * f_type
 
         return f_ego_diff, ego_traj_linear, ego_pred_linear
