@@ -21,6 +21,9 @@
 - `--compute_loss`: type=`int`, argtype=`temporary`.
   Controls whether to compute losses when testing. 
   The default value is `0`.
+- `--compute_metrics_with_types`: type=`int`, argtype=`temporary`.
+  Controls whether to compute metrics separately on different kinds of agents. 
+  The default value is `0`.
 - `--compute_relative_metrics`: type=`int`, argtype=`temporary`.
   Controls whether to compute relative ADE and relative FDE instead of the original ADE and FDE. 
   The default value is `0`.
@@ -153,6 +156,12 @@
 - `--Tr` (short for `-Tr`): type=`str`, argtype=`static`.
   Transformation type used to compute trajectory spectrums on all neighbor agents for modeling social interactions. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `fft`.
+- `--disable_linear_base`: type=`int`, argtype=`static`.
+  Choose whether to use linear predicted trajectories as the base to compute self-bias and re-bias terms. The zero-base will be applied when this arg is set to `1`. 
+  The default value is `0`.
+- `--encode_agent_types`: type=`int`, argtype=`static`.
+  Choose whether to encode the type name of each agent. It is mainly used in multi-type-agent prediction scenes, providing a unique type-coding for each type of agents when encoding their trajectories. 
+  The default value is `0`.
 - `--interp`: type=`str`, argtype=`static`.
   Type of interpolation method used to compute bias loss. It accepts `linear` (for linear interpolation) and `speed` (for linear speed interpolation). 
   The default value is `speed`.
@@ -163,7 +172,7 @@
   Choose whether to compute the self-bias term when training. 
   The default value is `1`.
 - `--no_interaction`: type=`int`, argtype=`temporary`.
- (Working in process)
+  Choose whether to consider all neighbor agents and their trajectories when forecasting trajectories for ego agents. This arg is only used to conduct ablation studies, and CAN NOT be used when training (instead, please use the other arg `learn_re_bias`). 
   The default value is `0`.
 - `--no_re_bias`: type=`int`, argtype=`temporary`.
   Ignoring the resonance-bias term when forecasting. It only works when testing. 

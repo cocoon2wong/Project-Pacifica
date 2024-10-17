@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-16 20:15:34
+@LastEditTime: 2024-10-17 09:32:57
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -69,7 +69,32 @@ class ResonanceArgs(EmptyArgs):
 
     @property
     def no_interaction(self) -> int:
+        """
+        Choose whether to consider all neighbor agents and their trajectories
+        when forecasting trajectories for ego agents.
+        This arg is only used to conduct ablation studies, and CAN NOT be used
+        when training (instead, please use the other arg `learn_re_bias`).
+        """
         return self._arg('no_interaction', 0, argtype=TEMPORARY)
+
+    @property
+    def encode_agent_types(self) -> int:
+        """
+        Choose whether to encode the type name of each agent.
+        It is mainly used in multi-type-agent prediction scenes, providing
+        a unique type-coding for each type of agents when encoding their
+        trajectories.
+        """
+        return self._arg('encode_agent_types', 0, argtype=STATIC)
+
+    @property
+    def disable_linear_base(self) -> int:
+        """
+        Choose whether to use linear predicted trajectories as the base to
+        compute self-bias and re-bias terms. The zero-base will be applied
+        when this arg is set to `1`.
+        """
+        return self._arg('disable_linear_base', 0, argtype=STATIC)
 
     @property
     def learn_self_bias(self) -> int:
@@ -112,10 +137,6 @@ class ResonanceArgs(EmptyArgs):
         It only works when testing.
         """
         return self._arg('no_re_bias', 0, argtype=TEMPORARY)
-
-    @property
-    def encode_agent_types(self) -> int:
-        return self._arg('encode_agent_types', 0, argtype=STATIC)
 
     def _init_all_args(self):
         super()._init_all_args()

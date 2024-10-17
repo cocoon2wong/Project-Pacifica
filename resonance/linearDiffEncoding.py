@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-10 17:24:30
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-16 20:18:41
+@LastEditTime: 2024-10-16 21:12:04
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -100,6 +100,6 @@ class LinearDiffEncoding(torch.nn.Module):
         if self.encode_agent_types and (agent_types is not None):
             f_type = self.type_encoder(
                 agent_types)[..., None, :]    # (batch, 1, d)
-            f_ego_diff = f_ego_diff * f_type
+            f_ego_diff = f_ego_diff + f_type
 
         return f_ego_diff, ego_traj_linear, ego_pred_linear
