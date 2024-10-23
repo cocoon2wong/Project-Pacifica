@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 11:18:03
+@LastEditTime: 2024-10-23 17:12:05
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -825,6 +825,10 @@ if __name__ == '__main__':
 
     (mode_label := tk.Label(BF, text=f'Mode: {toy.draw_mode}', **l_args)).grid(
         column=0, row=15)
+
+    if len(sys.argv) > 1:
+        tk.Label(BF, text=f'Args: {sys.argv[1:]}', wraplength=188, **l_args).grid(
+            column=0, row=16)
 
     tk.Button(BF, text='Switch Mode',
               command=lambda: toy.switch_draw_mode(mode_label)).grid(
