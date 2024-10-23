@@ -94,7 +94,8 @@ class ResonanceArgs(EmptyArgs):
         compute self-bias and re-bias terms. The zero-base will be applied
         when this arg is set to `1`.
         """
-        return self._arg('disable_linear_base', 0, argtype=STATIC)
+        return self._arg('disable_linear_base', 0, argtype=STATIC,
+                         desc_in_model_summary="NOT using the linear base trajectory")
 
     @property
     def learn_self_bias(self) -> int:
