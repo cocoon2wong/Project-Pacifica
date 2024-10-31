@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-23 17:12:05
+@LastEditTime: 2024-10-31 11:04:36
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -724,9 +724,22 @@ if __name__ == '__main__':
 
     qpid.set_log_path(LOG_PATH)
     qpid.set_log_stream_handler(TextboxHandler(logbar))
-    qpid.add_arg_alias(['-sdd', '-SDD'],
+    qpid.add_arg_alias(['--sdd', '-sdd'],
                        ['--force_dataset', 'SDD',
                         '--force_split', 'sdd',
+                        '--force_clip'])
+    qpid.add_arg_alias(['--ethucy', '-ethucy'],
+                       ['--force_dataset', 'ETH-UCY',
+                        '--force_split', 'zara1',
+                        '--force_clip'])
+    qpid.add_arg_alias(['--nba', '-nba'],
+                       ['--force_dataset', 'NBA',
+                        '--force_split', 'nba50k',
+                        '--force_clip'])
+    qpid.add_arg_alias(['--nuscenes', '-nuscenes'],
+                       ['--force_dataset', 'nuScenes_ov',
+                        '--interval', '0.5',
+                        '--force_split', 'nuScenes_ov_v1.0',
                         '--force_clip'])
     toy = SocialCircleToy(args(MODEL_PATH))
 
