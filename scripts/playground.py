@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-31 11:04:36
+@LastEditTime: 2024-11-01 15:31:40
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -37,12 +37,13 @@ SEG = segMaps.INPUT_TYPES.SEG_MAP
 DATASET = 'ETH-UCY'
 SPLIT = 'zara1'
 CLIP = 'zara1'
-MODEL_PATH = 'static'
+# MODEL_PATH = 'static'
+MODEL_PATH = '../Project-Monandaeg-Re/rezara1/'
 
-TEMP_IMG_PATH = './temp_files/socialcircle_toy_example/fig.png'
-TEMP_SEG_MAP_PATH = './temp_files/socialcircle_toy_example/seg.png'
-TEMP_RGB_IMG_PATH = './temp_files/socialcircle_toy_example/fig_rgb.png'
-LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
+TEMP_IMG_PATH = './temp_files/playground/fig.png'
+TEMP_SEG_MAP_PATH = './temp_files/playground/seg.png'
+TEMP_RGB_IMG_PATH = './temp_files/playground/fig_rgb.png'
+LOG_PATH = './temp_files/playground/run.log'
 
 DRAW_MODE_PLT = 'PLT'
 DRAW_MODE_QPID = 'Interactive (SC)'
@@ -65,7 +66,7 @@ SEG_MAP_B = 0x7f
 dir_check(os.path.dirname(LOG_PATH))
 
 
-class ToyArgs(EmptyArgs):
+class PlaygroundArgs(EmptyArgs):
 
     @property
     def draw_seg_map(self) -> int:
@@ -106,10 +107,10 @@ class ToyArgs(EmptyArgs):
         return self._arg('weights', MODEL_PATH, TEMPORARY, short_name='w')
 
 
-qpid.register_args(ToyArgs, 'Toy Example Args')
+qpid.register_args(PlaygroundArgs, 'Playground Example Args')
 
 
-class SocialCircleToy():
+class PlaygroundManager():
     def __init__(self, args: list[str]) -> None:
         # Manager objects
         self.t: qpid.training.Structure | None = None
@@ -127,7 +128,7 @@ class SocialCircleToy():
         self.input_types = None
 
         # Args
-        self.args = ToyArgs(sys.argv)
+        self.args = PlaygroundArgs(sys.argv)
 
         # Settings
         self.draw_mode_count = 0
@@ -664,7 +665,7 @@ def clear_indicator(canvas: tk.Canvas):
 if __name__ == '__main__':
 
     root = tk.Tk()
-    root.title('Toy Example of SocialCircle Models')
+    root.title('Playground')
 
     """
     Configs
@@ -741,7 +742,7 @@ if __name__ == '__main__':
                         '--interval', '0.5',
                         '--force_split', 'nuScenes_ov_v1.0',
                         '--force_clip'])
-    toy = SocialCircleToy(args(MODEL_PATH))
+    toy = PlaygroundManager(args(MODEL_PATH))
 
     """
     Init TK Components

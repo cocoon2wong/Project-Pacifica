@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath('.'))
 import qpid
 import resonance
 from qpid.mods import vis
-from scripts import toy_example
+from scripts import playground
 
 TARGET_FILE = './README.md'
 
