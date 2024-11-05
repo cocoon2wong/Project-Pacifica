@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-06-05 16:10:57
+@LastEditTime: 2024-11-05 20:49:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,6 @@ sys.path.insert(0, os.path.abspath('.'))
 import qpid
 import resonance
 from qpid.mods import vis
-from scripts import playground
 
 TARGET_FILE = './README.md'
 

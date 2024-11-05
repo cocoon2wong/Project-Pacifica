@@ -213,22 +213,4 @@
 - `--draw_on_empty_canvas`: type=`int`, argtype=`temporary`.
   Controls whether to draw visualized results on the empty canvas instead of the actual video. 
   The default value is `0`.
-
-### Toy Example Args
-
-- `--draw_seg_map`: type=`int`, argtype=`temporary`.
-  Choose whether to draw segmentation maps on the canvas. 
-  The default value is `1`.
-- `--lite`: type=`int`, argtype=`temporary`.
-  Choose whether to show the lite version of tk window. 
-  The default value is `0`.
-- `--physical_manual_neighbor_mode`: type=`float`, argtype=`temporary`.
-  Mode for the manual neighbor on segmentation maps. - Mode `1`: Add obstacles to the given position; - Mode `0`: Set areas to be walkable. 
-  The default value is `1.0`.
-- `--points`: type=`int`, argtype=`temporary`.
-  The number of points to simulate the trajectory of manual neighbor. It only accepts `2` or `3`. 
-  The default value is `2`.
-- `--weights` (short for `-w`): type=`str`, argtype=`temporary`.
-  The default weights to load. 
-  The default value is `static`.
 <!-- DO NOT CHANGE THIS LINE -->

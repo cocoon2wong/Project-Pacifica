@@ -4,3 +4,6 @@
 [submodule "qpid"]
 	path = qpid
 	url = https://github.com/cocoon2wong/Project-Qpid
+[submodule "playground"]
+	path = playground
+	url = https://github.com/cocoon2wong/Project-Solitaire.git

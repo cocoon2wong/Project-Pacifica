@@ -14,8 +14,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath('.'))
 
+import re
+
 import qpid
-import socialCircle
 
 
 def get_menmber(package):
@@ -87,9 +88,9 @@ def update_readme_file(file_path, new_lines, start: str, end: str):
 
 
 lines_qpid = print_all_members(qpid)
-lines_sc = print_all_members(socialCircle)
+lines_re = print_all_members(re)
 
 
-update_readme_file('./classRef.md', lines_qpid + lines_sc,
+update_readme_file('./classRef.md', lines_qpid + lines_re,
                    start='<!-- GRAPH BEGINS HERE -->',
                    end='<!-- GRAPH ENDS HERE -->')
