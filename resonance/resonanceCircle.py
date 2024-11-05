@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-10 18:26:32
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 10:57:00
+@LastEditTime: 2024-10-31 20:22:18
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -120,4 +120,4 @@ class ResonanceCircle(torch.nn.Module):
         # Concat resonance features -> (batch, partition, d)
         f_re = torch.concat([resonance_features, f_scan], dim=-1)
 
-        return f_re
+        return f_re, f_re_meta

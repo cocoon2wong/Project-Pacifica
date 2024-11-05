@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-17 09:25:09
+@LastEditTime: 2024-11-05 15:20:33
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -120,15 +120,24 @@ class ResonanceModel(Model):
 
         # Predict the re-bias trajectory
         if self.re_args.learn_re_bias:
-            # Compute and encode the ResonanceCircle to each ego agent
-            f_re = self.rc(self.picker.get_center(ego_traj)[..., :2],
-                           self.picker.get_center(nei_traj)[..., :2])
+            # Compute and encode the Resonance feature to each ego agent
+            # `f_re`: Resonance Matrix
+            # `f_re_meta`: Resonance feature
+            f_re, f_re_meta = self.rc(self.picker.get_center(ego_traj)[..., :2],
+                                      self.picker.get_center(nei_traj)[..., :2])
 
             # Compute the resonance-bias trajectory
             y_re_bias = self.b2(ego_traj - ego_traj_linear,
                                 f_ego, f_re, training)
         else:
             y_re_bias = 0
+
+        # The following lines are used to draw visualized figures in our paper
+        # from scripts.draw_neighbor_contributions import draw, draw_spectrums
+        # from scripts.draw_partitions import draw_partitions
+        # draw(self, self.get_top_manager().args.force_clip, ego_traj, nei_traj, f_re_meta)
+        # draw_spectrums(nei_traj, self.tr1)
+        # draw_partitions(f_re)
 
         # Add all biases to the base trajectory to compute the final prediction
         if not self.re_args.disable_linear_base:
