@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-06 10:19:42
+@LastEditTime: 2024-11-06 21:34:13
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -132,19 +132,31 @@ class ResonanceModel(Model):
         else:
             y_re_bias = 0
 
+        # -----------------------
         # The following lines are used to draw visualized figures in our paper
         # from scripts.draw_neighbor_contributions import draw, draw_spectrums
         # from scripts.draw_partitions import draw_partitions
         # draw(self, self.get_top_manager().args.force_clip, ego_traj, nei_traj, f_re_meta)
         # draw_spectrums(nei_traj, self.tr1)
-        # draw_partitions(f_re[..., :self.d//2], 're_pool',
-        #                 color_high=[0xe7, 0xe7, 0x71],
-        #                 color_low=[0xf8, 0x77, 0x61],
+        
+        # w = self.b2.concat_fc.linear.weight
+        # d = self.d//2
+
+        # _f_re = f_re[..., :d]
+        # _f_pos = f_re[..., d:2*d]
+        # w_re = w[..., d:2*d]
+        # w_pos = w[..., 2*d:3*d]
+
+        # draw_partitions(_f_re @ w_re.T, 're_pool',
+        #                 color_high=[0xf9, 0xcf, 0x62],
+        #                 color_low=[0x74, 0x8b, 0xe2],
         #                 max_width=0.3, min_width=0.2)
-        # draw_partitions(f_re[..., self.d//2:], 'pos_pool',
-        #                 color_high=[250, 100, 100],
-        #                 color_low=[60, 100, 220],
+        # draw_partitions(_f_pos @ w_pos.T, 'pos_pool',
+        #                 color_high=[0xf9, 0x5c, 0x77],
+        #                 color_low=[0x74, 0x8b, 0xe2],
         #                 max_width=-0.3, min_width=-0.2)
+        # Vis codes end here
+        # -----------------------
 
         # Add all biases to the base trajectory to compute the final prediction
         if not self.re_args.disable_linear_base:
