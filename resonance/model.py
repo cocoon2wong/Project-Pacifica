@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-05 15:20:33
+@LastEditTime: 2024-11-06 10:19:42
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -137,7 +137,14 @@ class ResonanceModel(Model):
         # from scripts.draw_partitions import draw_partitions
         # draw(self, self.get_top_manager().args.force_clip, ego_traj, nei_traj, f_re_meta)
         # draw_spectrums(nei_traj, self.tr1)
-        # draw_partitions(f_re)
+        # draw_partitions(f_re[..., :self.d//2], 're_pool',
+        #                 color_high=[0xe7, 0xe7, 0x71],
+        #                 color_low=[0xf8, 0x77, 0x61],
+        #                 max_width=0.3, min_width=0.2)
+        # draw_partitions(f_re[..., self.d//2:], 'pos_pool',
+        #                 color_high=[250, 100, 100],
+        #                 color_low=[60, 100, 220],
+        #                 max_width=-0.3, min_width=-0.2)
 
         # Add all biases to the base trajectory to compute the final prediction
         if not self.re_args.disable_linear_base:
