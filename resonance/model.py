@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-06 21:34:13
+@LastEditTime: 2024-11-07 21:22:57
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -134,9 +134,10 @@ class ResonanceModel(Model):
 
         # -----------------------
         # The following lines are used to draw visualized figures in our paper
-        # from scripts.draw_neighbor_contributions import draw, draw_spectrums
+        # from scripts.draw_neighbor_contributions import draw, draw_spectrums, draw_pca
         # from scripts.draw_partitions import draw_partitions
         # draw(self, self.get_top_manager().args.force_clip, ego_traj, nei_traj, f_re_meta)
+        # draw_pca(nei_traj, f_re_meta)
         # draw_spectrums(nei_traj, self.tr1)
         
         # w = self.b2.concat_fc.linear.weight

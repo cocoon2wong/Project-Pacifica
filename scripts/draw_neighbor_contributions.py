@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-31 20:03:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-05 15:24:59
+@LastEditTime: 2024-11-07 17:07:15
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -49,8 +49,8 @@ def draw(model: Model, clip: str,
     text_delta = r_min
 
     # Open a new canvas
-    plt.close()
-    plt.figure()
+    plt.close('nei_contribution')
+    plt.figure('nei_contribution')
     v._visualization_plt(None, obs=_obs, neighbor=_nei)
 
     # Compute radiuses
@@ -70,7 +70,59 @@ def draw(model: Model, clip: str,
 
         plt.text(_pos[0] + text_delta, _pos[1] + text_delta, str(index),
                  color='white',
+                 fontsize=20,
                  bbox=dict(boxstyle='round', alpha=0.5))
+
+    plt.show()
+
+
+def draw_pca(nei: torch.Tensor,
+             f_re_meta: torch.Tensor,
+             w_max=0.1,
+             w_min=0.06):
+
+    nei_count = int(torch.sum(get_mask(torch.sum(nei, dim=[-1, -2]))))
+    a = f_re_meta[0, :nei_count]
+    u, s, v = torch.pca_lowrank(a, q=2)
+    _p = torch.matmul(a, v[:, :2]).numpy()
+
+    _p = _p / np.array([np.max(np.abs(_p[..., 0])),
+                        np.max(np.abs(_p[..., 1]))])
+
+    r_max = w_max
+    r_min = w_min
+    text_delta = r_min
+
+    plt.close('nei_contribution_pca')
+    plt.figure('nei_contribution_pca')
+
+    # Compute radiuses
+    r_re_real = torch.sum(f_re_meta ** 1, dim=-1)[0, :nei_count]
+    r = (r_re_real/torch.max(r_re_real))
+
+    for index, (_nei_p, _r) in enumerate(zip(_p, r)):
+        _radius = (r_min + (r_max - r_min) * _r).numpy()
+        _color = COLOR_LOW + (COLOR_HIGH - COLOR_LOW) * _r.numpy()
+        _pos = (float(_nei_p[0]), float(_nei_p[1]))
+
+        plt.plot(*_pos, 'o')
+
+        _circle = plt.Circle(_pos, _radius,
+                             fill=True, color=list(_color/255),
+                             alpha=0.9)
+        plt.gca().add_artist(_circle)
+
+        plt.text(_nei_p[0] + text_delta, _nei_p[1] + text_delta, str(index),
+                 color='white',
+                 fontsize=20,
+                 bbox=dict(boxstyle='round', alpha=0.5))
+
+        plt.axis('equal')
+
+    # Plot corner points to resize the canvas
+    for x in [-1.5, 1.5]:
+        for y in [-1.5, 1.5]:
+            plt.plot(x, y)
 
     plt.show()
 
