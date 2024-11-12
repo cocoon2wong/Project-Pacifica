@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-15 14:54:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-15 15:22:19
+@LastEditTime: 2024-11-12 16:01:48
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -151,4 +151,4 @@ class SocialCircleLayer(torch.nn.Module):
         social_circle = torch.permute(social_circle, [2, 0, 1])
 
         f_sc = self.ce(social_circle)
-        return f_sc
+        return f_sc, social_circle
