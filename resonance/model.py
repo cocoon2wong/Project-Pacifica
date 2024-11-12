@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-07 21:22:57
+@LastEditTime: 2024-11-11 20:42:05
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -133,7 +133,7 @@ class ResonanceModel(Model):
             y_re_bias = 0
 
         # -----------------------
-        # The following lines are used to draw visualized figures in our paper
+        # # # # The following lines are used to draw visualized figures in our paper
         # from scripts.draw_neighbor_contributions import draw, draw_spectrums, draw_pca
         # from scripts.draw_partitions import draw_partitions
         # draw(self, self.get_top_manager().args.force_clip, ego_traj, nei_traj, f_re_meta)
@@ -148,15 +148,15 @@ class ResonanceModel(Model):
         # w_re = w[..., d:2*d]
         # w_pos = w[..., 2*d:3*d]
 
-        # draw_partitions(_f_re @ w_re.T, 're_pool',
+        # draw_partitions(_f_re[:1] @ w_re.T, 're_pool',
         #                 color_high=[0xf9, 0xcf, 0x62],
         #                 color_low=[0x74, 0x8b, 0xe2],
         #                 max_width=0.3, min_width=0.2)
-        # draw_partitions(_f_pos @ w_pos.T, 'pos_pool',
+        # draw_partitions(_f_pos[:1] @ w_pos.T, 'pos_pool',
         #                 color_high=[0xf9, 0x5c, 0x77],
         #                 color_low=[0x74, 0x8b, 0xe2],
         #                 max_width=-0.3, min_width=-0.2)
-        # Vis codes end here
+        # # # # Vis codes end here
         # -----------------------
 
         # Add all biases to the base trajectory to compute the final prediction

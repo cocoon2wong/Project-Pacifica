@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-31 20:03:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-07 17:07:15
+@LastEditTime: 2024-11-11 15:18:39
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -40,7 +40,7 @@ def draw(model: Model, clip: str,
                               dataset=model.args.dataset,
                               clip=clip)
 
-    nei_count = int(torch.sum(get_mask(torch.sum(nei, dim=[-1, -2]))))
+    nei_count = int(torch.sum(get_mask(torch.sum(nei[0], dim=[-1, -2]))))
     _nei = nei[0, :nei_count]
     _obs = obs[0]
 
@@ -81,7 +81,7 @@ def draw_pca(nei: torch.Tensor,
              w_max=0.1,
              w_min=0.06):
 
-    nei_count = int(torch.sum(get_mask(torch.sum(nei, dim=[-1, -2]))))
+    nei_count = int(torch.sum(get_mask(torch.sum(nei[0], dim=[-1, -2]))))
     a = f_re_meta[0, :nei_count]
     u, s, v = torch.pca_lowrank(a, q=2)
     _p = torch.matmul(a, v[:, :2]).numpy()
@@ -131,7 +131,7 @@ def draw_spectrums(nei: torch.Tensor,
                    Tlayer: torch.nn.Module,
                    length_gain=50):
 
-    nei_count = int(torch.sum(get_mask(torch.sum(nei, dim=[-1, -2]))))
+    nei_count = int(torch.sum(get_mask(torch.sum(nei[0], dim=[-1, -2]))))
     nei_spec = Tlayer(nei[0, :nei_count] - nei[0, :nei_count, -1:, :])
 
     # Compute new shape (after resize)
