@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-11 20:42:05
+@LastEditTime: 2024-11-19 20:20:02
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -16,13 +16,29 @@ from qpid.utils import INIT_POSITION
 
 from .__args import ResonanceArgs
 from .__layers import SocialCircleLayer
+from ._reBias import ReBiasLayer
+from ._resonance import ResonanceLayer
+from ._selfBias import SelfBiasLayer
 from .linearDiffEncoding import LinearDiffEncoding
-from .reSelfBias import ReSelfBias
-from .resonanceBias import ResonanceBias
-from .resonanceCircle import ResonanceCircle
 
 
 class ResonanceModel(Model):
+    """
+    *Re* Model
+    ---
+    The *Resonance* trajectory prediction model, short for *Re*.
+
+    Main contributions:
+    - The ``vibration-like'' prediction strategy that divides pedestrian
+        trajectory prediction into the direct superposition of multiple
+        vibration portions, i.e., trajectory biases, to better simulate their
+        intuitive behaviors, including the linear base, the self-bias, and the
+        resonance-bias;
+    - The ``resonance-like'' representation of social interactions when
+        forecasting trajectories, which regards that social interactions are
+        associated with trajectory spectrums of interaction participators and
+        their similarities.
+    """
 
     def __init__(self, structure=None, *args, **kwargs):
         super().__init__(structure, *args, **kwargs)
@@ -35,6 +51,8 @@ class ResonanceModel(Model):
         self.re_args = self.args.register_subargs(ResonanceArgs, 're_args')
 
         # Set model inputs
+        # Types of agents are only used in complex scenes
+        # For other datasets, keep it disabled (through the arg)
         if not self.re_args.encode_agent_types:
             self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
                             INPUT_TYPES.NEIGHBOR_TRAJ)
@@ -63,44 +81,44 @@ class ResonanceModel(Model):
 
         # Self-Bias Layer
         if self.re_args.learn_self_bias:
-            self.b1 = ReSelfBias(self.args,
-                                 output_units=self.d,
-                                 noise_units=self.d//2,
-                                 transform_layer=self.t1,
-                                 itransform_layer=self.it1)
+            self.b1 = SelfBiasLayer(self.args,
+                                    output_units=self.d,
+                                    noise_units=self.d//2,
+                                    transform_layer=self.t1,
+                                    itransform_layer=self.it1)
 
         if not self.re_args.learn_re_bias:
             return
 
-        # Resonance Encoding Layer
+        # Layer to compute the resonance matrix (or SocialCircle)
         if not self.re_args.use_original_socialcircle:
-            self.rc = ResonanceCircle(partitions=self.re_args.partitions,
-                                      hidden_units=self.d,
-                                      output_units=self.d,
-                                      transform_layer=self.tr1)
+            self.rc = ResonanceLayer(partitions=self.re_args.partitions,
+                                     hidden_units=self.d,
+                                     output_units=self.d,
+                                     transform_layer=self.tr1)
         else:
             self.rc = SocialCircleLayer(partitions=self.re_args.partitions,
                                         output_units=self.d)
 
         # Resonance Bias Layer
-        self.b2 = ResonanceBias(self.args,
-                                output_units=self.d,
-                                noise_units=self.d//2,
-                                ego_feature_dim=self.d,
-                                re_feature_dim=self.d//2,
-                                T_nei_obs=self.tr1,
-                                iT_nei_pred=self.itr1)
+        self.b2 = ReBiasLayer(self.args,
+                              output_units=self.d,
+                              noise_units=self.d//2,
+                              ego_feature_dim=self.d,
+                              re_feature_dim=self.d//2,
+                              T_nei_obs=self.tr1,
+                              iT_nei_pred=self.itr1)
 
     def forward(self, inputs: list[torch.Tensor], training=None, mask=None, *args, **kwargs):
         # Unpack inputs
         # (batch, obs, dim)
-        ego_traj = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
+        x_ego = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
 
         # (batch, N, obs, dim)
         if self.re_args.no_interaction:
-            nei_traj = self.create_empty_neighbors(ego_traj)
+            x_nei = self.create_empty_neighbors(x_ego)
         else:
-            nei_traj = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
+            x_nei = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Get types of all agents (if needed)
         if self.re_args.encode_agent_types:
@@ -109,37 +127,37 @@ class ResonanceModel(Model):
             agent_types = None
 
         # Encode features of ego trajectories (diff encoding)
-        f_ego, ego_traj_linear, y_linear = self.linear(ego_traj, agent_types)
+        f_diff, linear_fit, linear_base = self.linear(x_ego, agent_types)
 
         # Predict the self-bias trajectory
         if self.re_args.learn_self_bias:
-            y_self_bias = self.b1(ego_traj_linear, f_ego,
-                                  self.output_pred_steps, training)
+            self_bias = self.b1(linear_fit, f_diff,
+                                self.output_pred_steps, training)
         else:
-            y_self_bias = 0
+            self_bias = 0
 
         # Predict the re-bias trajectory
         if self.re_args.learn_re_bias:
             # Compute and encode the Resonance feature to each ego agent
-            # `f_re`: Resonance Matrix
-            # `f_re_meta`: Resonance feature
-            f_re, f_re_meta = self.rc(self.picker.get_center(ego_traj)[..., :2],
-                                      self.picker.get_center(nei_traj)[..., :2])
+            # `re_matrix`: Resonance Matrix
+            # `f_re`: Resonance feature
+            re_matrix, f_re = self.rc(self.picker.get_center(x_ego)[..., :2],
+                                      self.picker.get_center(x_nei)[..., :2])
 
             # Compute the resonance-bias trajectory
-            y_re_bias = self.b2(ego_traj - ego_traj_linear,
-                                f_ego, f_re, training)
+            re_bias = self.b2(x_ego - linear_fit,
+                              f_diff, re_matrix, training)
         else:
-            y_re_bias = 0
+            re_bias = 0
 
         # -----------------------
         # # # # The following lines are used to draw visualized figures in our paper
         # from scripts.draw_neighbor_contributions import draw, draw_spectrums, draw_pca
         # from scripts.draw_partitions import draw_partitions
-        # draw(self, self.get_top_manager().args.force_clip, ego_traj, nei_traj, f_re_meta)
-        # draw_pca(nei_traj, f_re_meta)
-        # draw_spectrums(nei_traj, self.tr1)
-        
+        # draw(self, self.get_top_manager().args.force_clip, x_ego, x_nei, f_re)
+        # draw_pca(x_nei, f_re)
+        # draw_spectrums(x_nei, self.tr1)
+
         # w = self.b2.concat_fc.linear.weight
         # d = self.d//2
 
@@ -161,27 +179,27 @@ class ResonanceModel(Model):
 
         # Add all biases to the base trajectory to compute the final prediction
         if not self.re_args.disable_linear_base:
-            y = y_linear[..., None, :, :]
+            y = linear_base[..., None, :, :]
         else:
             y = 0
 
         if training or not self.re_args.no_self_bias:
-            y = y + y_self_bias
+            y = y + self_bias
 
         if training or not self.re_args.no_re_bias:
-            y = y + y_re_bias
+            y = y + re_bias
 
         return y
 
-    def create_empty_neighbors(self, ego_traj: torch.Tensor):
+    def create_empty_neighbors(self, x_ego: torch.Tensor):
         """
         Create the neighbor trajectory matrix that only contains the ego agent.
         """
-        empty = INIT_POSITION * torch.ones([ego_traj.shape[0],
+        empty = INIT_POSITION * torch.ones([x_ego.shape[0],
                                             self.args.max_agents - 1,
-                                            ego_traj.shape[-2],
-                                            ego_traj.shape[-1]]).to(ego_traj.device)
-        return torch.concat([ego_traj[..., None, :, :], empty], dim=-3)
+                                            x_ego.shape[-2],
+                                            x_ego.shape[-1]]).to(x_ego.device)
+        return torch.concat([x_ego[..., None, :, :], empty], dim=-3)
 
 
 class ResonanceStructure(Structure):

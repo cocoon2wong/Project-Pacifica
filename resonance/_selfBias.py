@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-09 20:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-11 11:03:54
+@LastEditTime: 2024-11-19 20:15:22
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -18,13 +18,12 @@ from qpid.model.layers.transfroms import _BaseTransformLayer
 from .__args import ResonanceArgs
 
 
-class ReSelfBias(torch.nn.Module):
+class SelfBiasLayer(torch.nn.Module):
     """
     Self-Bias Layer
     ---
-    It aims to predict the "clean" trajectory bias compared to the linear
-    future trajectories only according to the observed trajectory of the
-    ego agent.
+    Self-bias is used to model diversity and intention changes of the ego agent
+    itself as an additional vibration onto the linear base.
     """
 
     def __init__(self, Args: Args,
@@ -69,13 +68,11 @@ class ReSelfBias(torch.nn.Module):
             include_top=False
         )
 
-        # Trainable adj matrix and gcn layer
-        # See our previous work "MSN: Multi-Style Network for Trajectory Prediction" for detail
+        # Decoder layers
+        # See "MSN: Multi-Style Network for Trajectory Prediction" for detail
         # It is used to generate multiple predictions within one model implementation
         self.ms_fc = layers.Dense(self.d, self.re_args.Kc, torch.nn.Tanh)
         self.ms_conv = layers.GraphConv(self.d, self.d)
-
-        # Decoder layers
         self.decoder_fc1 = layers.Dense(self.d, self.d, torch.nn.Tanh)
         self.decoder_fc2 = layers.Dense(self.d,
                                         self.Tsteps_de * self.Tchannels_de)
@@ -91,25 +88,25 @@ class ReSelfBias(torch.nn.Module):
 
         self.interp_layer = i_layer_type()
 
-    def forward(self, ego_traj_linear: torch.Tensor,
-                f_ego_diff: torch.Tensor,
-                output_pred_steps: torch.Tensor,
+    def forward(self, linear_fit: torch.Tensor,
+                f_diff: torch.Tensor,
+                waypoints_indices: torch.Tensor,
                 training=None, mask=None, *args, **kwargs):
 
         # Sampling random noise vectors
         all_predictions = []
         repeats = self.args.K_train if training else self.args.K
-        traj_targets = self.T_layer(ego_traj_linear)
+        traj_targets = self.T_layer(linear_fit)
 
-        # First predict the overall trajectory-bias (on several keypoints)
+        # First predict the overall waypoint-bias (on several waypoints)
         for _ in range(repeats):
-            # Assign random ids and embedding -> (batch, steps, d)
+            # Assign random noise and embedding -> (batch, steps, d)
             z = torch.normal(mean=0, std=1,
-                             size=list(f_ego_diff.shape[:-1]) + [self.d_id])
-            f_z = self.ie(z.to(ego_traj_linear.device))
+                             size=list(f_diff.shape[:-1]) + [self.d_id])
+            f_z = self.ie(z.to(linear_fit.device))
 
             # (batch, steps, 2*d)
-            f_final = torch.concat([f_ego_diff, f_z], dim=-1)
+            f_final = torch.concat([f_diff, f_z], dim=-1)
 
             # Transformer outputs' shape is (batch, steps, d)
             f_tran, _ = self.T(inputs=f_final,
@@ -131,13 +128,13 @@ class ReSelfBias(torch.nn.Module):
             all_predictions.append(y)
 
         # Stack random output -> (batch, K, n_key, dim)
-        y_clean = torch.concat(all_predictions, dim=-3)
+        waypoint_bias = torch.concat(all_predictions, dim=-3)
 
-        # Interpolating keypoints -> (batch, K, pred, dim)
-        y_clean_interp = self.interp(index=output_pred_steps,
-                                     value=y_clean,
-                                     obs_traj=ego_traj_linear)
-        return y_clean_interp
+        # Interpolating waypoints -> (batch, K, pred, dim)
+        self_bias = self.interp(index=waypoints_indices,
+                                value=waypoint_bias,
+                                obs_traj=linear_fit)
+        return self_bias
 
     def interp(self, index: torch.Tensor,
                value: torch.Tensor,

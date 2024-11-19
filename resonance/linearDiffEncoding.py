@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-10 17:24:30
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-16 21:12:04
+@LastEditTime: 2024-11-19 20:19:20
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -55,6 +55,8 @@ class LinearDiffEncoding(torch.nn.Module):
                                       transform_layer=self.T_layer)
 
         # Bilinear structure (outer product + pooling + fc)
+        # See "Another vertical view: A hierarchical network for heterogeneous
+        # trajectory prediction via spectrums."
         self.outer = layers.OuterLayer(self.d, self.d)
         self.pooling = layers.MaxPooling2D((2, 2))
         self.flatten = layers.Flatten(axes_num=2)
@@ -66,40 +68,40 @@ class LinearDiffEncoding(torch.nn.Module):
             self.type_encoder = layers.Dense(MAX_TYPE_NAME_LEN, output_units,
                                              torch.nn.Tanh)
 
-    def forward(self, ego_traj: torch.Tensor,
+    def forward(self, x_ego: torch.Tensor,
                 agent_types: torch.Tensor | None = None,
                 *args, **kwargs):
 
         # Compute the linear trajectory
-        traj_linear = self.linear(ego_traj)      # (batch, obs+pred, dim)
+        traj_linear = self.linear(x_ego)      # (batch, obs+pred, dim)
 
         # Move the linear trajectory to make it intersect with the obs trajectory
         # at the current observation moment (by moving it to (0. 0)).
         _t = self.obs_frames
         traj_linear = traj_linear - traj_linear[..., _t-1:_t, :]
-        ego_traj_linear = traj_linear[..., :_t, :]
-        ego_pred_linear = traj_linear[..., _t:, :]
+        linear_fit = traj_linear[..., :_t, :]
+        linear_base = traj_linear[..., _t:, :]
 
         # Trajectory embedding and encoding
-        f = self.te(ego_traj)
+        f = self.te(x_ego)
         f = self.outer(f, f)
         f = self.pooling(f)
         f = self.flatten(f)
         f_ego = self.outer_fc(f)       # (batch, steps, d/2)
 
         # Linear trajectory embedding and encoding
-        f_l = self.le(ego_traj_linear)
+        f_l = self.le(linear_fit)
         f_l = self.outer(f_l, f_l)
         f_l = self.pooling(f_l)
         f_l = self.flatten(f_l)
         f_ego_linear = self.outer_fc_linear(f_l)       # (batch, steps, d/2)
 
-        f_ego_diff = f_ego - f_ego_linear    # ranged from (-2, 2)
-        f_ego_diff = f_ego_diff / 2           # ranged from (-1 ,1)
+        f_diff = f_ego - f_ego_linear    # ranged from (-2, 2)
+        f_diff = f_diff / 2           # ranged from (-1 ,1)
 
         if self.encode_agent_types and (agent_types is not None):
             f_type = self.type_encoder(
                 agent_types)[..., None, :]    # (batch, 1, d)
-            f_ego_diff = f_ego_diff + f_type
+            f_diff = f_diff + f_type
 
-        return f_ego_diff, ego_traj_linear, ego_pred_linear
+        return f_diff, linear_fit, linear_base
