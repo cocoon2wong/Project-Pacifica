@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-09 14:41:01
+@LastEditTime: 2024-11-19 20:33:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,11 +15,6 @@ import torch
 import qpid
 import resonance
 
-# Only for debug
-try:
-    import socialCircle
-except:
-    pass
 
 def main(args: list[str], run_train_or_test=True):
     min_args = qpid.args.Args(args, is_temporary=True)

@@ -1,5 +1,129 @@
-# Project-Pacifica
-🌴
+# Re (For Reviewers)
+
+This is the official PyTorch codes (CVPR reviewers' version) of our paper "Resonance: Learning to Predict Social-Aware Pedestrian Trajectories as Co-Vibrations".
+Due to the size limitations of the attachments, parts of the code and instructions have been redacted.
+
+## Get Started
+
+This version of the code is prepared for CVPR reviewers, and you can use it directly without cloning or initializing.
+
+## Requirements
+
+The codes are developed with Python 3.10.
+Additional packages used are included in the `requirements.txt` file.
+
+{: .box-warning}
+**Warning:** We recommend installing all required Python packages in a virtual environment (like the `conda` environment).
+Otherwise, there *COULD* be other problems due to the package version conflicts.
+
+Run the following command to install the required packages in your Python environment:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Dataset Prepare and Process
+
+### ETH-UCY, SDD, NBA, nuScenes
+
+Due to the size limitations, we only include dataset files of `ETH-UCY` and `SDD` for reviewers to test our models.
+
+### Prepare Your New Datasets
+
+(This part will be made available later.)
+
+## Pre-Trained Model Weights and Evaluation
+
+We have provided our pre-trained model weights to help you quickly evaluate the `Re` models' performance.
+
+Due to size limitations, we have attached the following weights files for the reviewers to check the performance of our proposed model:
+
+```none
+./weights/
+|___reeth/
+|___rehotel/
+|___reuniv13/
+|___rezara1/
+|___rezara2/
+|___resdd/
+```
+
+You can start evaluating these weights by
+
+```bash
+python main.py --load SOME_MODEL_WEIGHTS
+```
+
+Here, `SOME_MODEL_WEIGHTS` is the path of the weights folder, for example, `./weights/rezara1`.
+
+## Training
+
+You can start training a `Re` model via the following command:
+
+```bash
+python main.py --model re --split DATASET_SPLIT
+```
+
+Here, `DATASET_SPLIT` is the identifier (i.e., the name of dataset's split files in `dataset_configs`, for example `eth` is the identifier of the split list in `dataset_configs/ETH-UCY/eth.plist`) of the dataset or splits used for training.
+It accepts:
+
+- ETH-UCY: {`eth`, `hotel`, `univ13`, `zara1`, `zara2`};
+- SDD: `sdd`;
+- ~~NBA: `nba50k`;~~
+- ~~nuScenes: `nuScenes_ov_v1.0`.~~
+
+For example, you can start training the `Re` model on the `zara1` split by
+
+```bash
+python main.py --model re --split zara1
+```
+
+Also, other args may need to be specified, like the learning rate `--lr`, batch size `--batch_size`, etc.
+See detailed args in the `Args Used` Section.
+
+In addition, the simplest way to reproduce our results is to copy all training args we used in the provided weights.
+For example, you can start a training of `Re` on `zara1` using the same args as we did by:
+
+```bash
+python main.py --model re --restore_args ./weights/rezara1
+```
+
+## Playground
+
+You can run the following script to learn how the proposed `Re` works to handle social interactions in an interactive way by adding any manual neighbors.
+In addition to this, most of the visualizations shown in the paper are also drawn through it.
+Run the following command to start:
+
+```bash
+python playground/main.py
+```
+
+Then, click the left `Load Model Weights` to load a pre-trained weights.
+For example, select the `./weights/rezara1` folder (not to open it!), then click `choose` to load it.
+You can view some of the visualized model predictions by clicking `Random` and `Run Prediction` as needed.
+
+\* Playground may need dataset videos. For copyright reasons and size limitations, we do not provide them in our repo. Instead, a static image will be displayed if you have no videos put into the corresponding path.
+
+## Args Used
+
+Please specify your customized args when training or testing your model in the following way:
+
+```bash
+python main.py --ARG_KEY1 ARG_VALUE2 --ARG_KEY2 ARG_VALUE2 -SHORT_ARG_KEY3 ARG_VALUE3 ...
+```
+
+where `ARG_KEY` is the name of args, and `ARG_VALUE` is the corresponding value.
+All args and their usages are listed below.
+
+About the `argtype`:
+
+- Args with argtype=`static` can not be changed once after training.
+  When testing the model, the program will not parse these args to overwrite the saved values.
+- Args with argtype=`dynamic` can be changed anytime.
+  The program will try to first parse inputs from the terminal and then try to load from the saved JSON file.
+- Args with argtype=`temporary` will not be saved into JSON files.
+  The program will parse these args from the terminal at each time.
+
 <!-- DO NOT CHANGE THIS LINE -->
 ### Basic Args
 
@@ -145,7 +269,7 @@
   Controls whether to print verbose logs and outputs to the terminal. 
   The default value is `0`.
 
-### Resonance Args
+### Re Args
 
 - `--Kc`: type=`int`, argtype=`static`.
   The number of style channels in `Agent` model. 
@@ -213,4 +337,34 @@
 - `--draw_on_empty_canvas`: type=`int`, argtype=`temporary`.
   Controls whether to draw visualized results on the empty canvas instead of the actual video. 
   The default value is `0`.
+
+### Playground Args
+
+- `--clip`: type=`str`, argtype=`temporary`.
+  The video clip to run this playground. 
+  The default value is `zara1`.
+- `--compute_social_diff`: type=`int`, argtype=`temporary`.
+ (Working in process)
+  The default value is `0`.
+- `--do_not_draw_neighbors`: type=`int`, argtype=`temporary`.
+  Choose whether to draw neighboring-agents' trajectories. 
+  The default value is `0`.
+- `--draw_seg_map`: type=`int`, argtype=`temporary`.
+  Choose whether to draw segmentation maps on the canvas. 
+  The default value is `1`.
+- `--lite`: type=`int`, argtype=`temporary`.
+  Choose whether to show the lite version of tk window. 
+  The default value is `0`.
+- `--physical_manual_neighbor_mode`: type=`float`, argtype=`temporary`.
+  Mode for the manual neighbor on segmentation maps. - Mode `1`: Add obstacles to the given position; - Mode `0`: Set areas to be walkable. 
+  The default value is `1.0`.
+- `--points`: type=`int`, argtype=`temporary`.
+  The number of points to simulate the trajectory of manual neighbor. It only accepts `2` or `3`. 
+  The default value is `2`.
+- `--save_full_outputs`: type=`int`, argtype=`temporary`.
+  Choose whether to save all outputs as images. 
+  The default value is `0`.
+- `--weight` (short for `-w`): type=`str`, argtype=`temporary`.
+  The default weights to load. 
+  The default value is `static`.
 <!-- DO NOT CHANGE THIS LINE -->
