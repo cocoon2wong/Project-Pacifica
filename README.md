@@ -1,11 +1,21 @@
-# Re (For Reviewers)
+# Re
 
-This is the official PyTorch codes (CVPR reviewers' version) of our paper "Resonance: Learning to Predict Social-Aware Pedestrian Trajectories as Co-Vibrations".
+This is the official PyTorch codes of our paper "Resonance: Learning to Predict Social-Aware Pedestrian Trajectories as Co-Vibrations".
 Due to the size limitations of the attachments, parts of the code and instructions have been redacted.
 
 ## Get Started
 
-This version of the code is prepared for CVPR reviewers, and you can use it directly without cloning or initializing.
+You can clone [this repository](https://github.com/cocoon2wong/Re) by the following command:
+
+```bash
+git clone https://github.com/cocoon2wong/Re.git
+```
+
+Then, run the following command to initialize all submodules:
+
+```bash
+git submodule update --init --recursive
+```
 
 ## Requirements
 
@@ -26,27 +36,15 @@ pip install -r requirements.txt
 
 ### ETH-UCY, SDD, NBA, nuScenes
 
-Due to the size limitations, we only include dataset files of `ETH-UCY` and `SDD` for reviewers to test our models.
+*TBA*
 
 ### Prepare Your New Datasets
 
-(This part will be made available later.)
+*TBA*
 
 ## Pre-Trained Model Weights and Evaluation
 
-We have provided our pre-trained model weights to help you quickly evaluate the `Re` models' performance.
-
-Due to size limitations, we have attached the following weights files for the reviewers to check the performance of our proposed model:
-
-```none
-./weights/
-|___reeth/
-|___rehotel/
-|___reuniv13/
-|___rezara1/
-|___rezara2/
-|___resdd/
-```
+*TBA*
 
 You can start evaluating these weights by
 
@@ -69,8 +67,8 @@ It accepts:
 
 - ETH-UCY: {`eth`, `hotel`, `univ13`, `zara1`, `zara2`};
 - SDD: `sdd`;
-- ~~NBA: `nba50k`;~~
-- ~~nuScenes: `nuScenes_ov_v1.0`.~~
+- NBA: `nba50k`;
+- nuScenes: `nuScenes_ov_v1.0`.
 
 For example, you can start training the `Re` model on the `zara1` split by
 
