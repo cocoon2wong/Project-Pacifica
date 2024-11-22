@@ -36,15 +36,67 @@ pip install -r requirements.txt
 
 ### ETH-UCY, SDD, NBA, nuScenes
 
-*TBA*
+{: .box-warning}
+**Warning:** If you want to validate `Re` models on these datasets, make sure you are getting this repository via `git clone` and that all `gitsubmodules` have been properly initialized via `git submodule update --init --recursive`.
 
-### Prepare Your New Datasets
+You can run the following commands to prepare dataset files that have been validated in our paper:
 
-*TBA*
+1. Run Python the script inner the `dataset_original` folder:
+
+    ```bash
+    cd dataset_original
+    ```
+
+    - For `ETH-UCY` and `SDD`, run
+
+        ```bash
+        python main_ethucysdd.py
+        ```
+
+    - For `NBA`, please download their original dataset files, put them into the given path listed within `dataset_original/main_nba.py`, then run
+
+        ```bash
+        python main_nba.py
+        ```
+
+    - For `nuScenes`, please download their dataset files, put them into the given path listed within `dataset_original/main_nuscenes.py`, then run
+
+        ```bash
+        python main_nuscenes.py
+        ```
+
+2. Back to the repo folder and create soft links:
+
+    ```bash
+    cd ..
+    ln -s dataset_original/dataset_processed ./
+    ln -s dataset_original/dataset_configs ./
+    ```
+
+    (**NOTE**: You can also download the processed dataset files manually from [here](https://github.com/cocoon2wong/Project-Luna/releases), and put them into `dataset_processed` and `dataset_configs` folders manually.)
+
+Click the following buttons to learn how we process these dataset files and the detailed dataset settings.
+
+<div style="text-align: center;">
+    <a class="btn btn-colorful btn-lg" href="https://cocoon2wong.github.io/Project-Luna/howToUse/">💡 Dataset Guidelines</a>
+    <a class="btn btn-colorful btn-lg" href="https://cocoon2wong.github.io/Project-Luna/notes/">💡 Datasets and Splits Information</a>
+</div>
+
+### Training on Your New Datasets
+
+Before training `Re` models on your own dataset, you should add your dataset information.
+See [this page](https://cocoon2wong.github.io/Project-Luna/) for more details.
 
 ## Pre-Trained Model Weights and Evaluation
 
-*TBA*
+We have provided our pre-trained model weights to help you quickly evaluate `Re` models' performance.
+
+Click the following buttons to download our model weights.
+We recommend that you download the weights and place them in the `weights` folder.
+
+<div style="text-align: center;">
+    <a class="btn btn-colorful btn-lg" href="https://github.com/cocoon2wong/Project-Monandaeg/tree/Re">⬇️ Download Weights</a>
+</div>
 
 You can start evaluating these weights by
 
@@ -79,16 +131,24 @@ python main.py --model re --split zara1
 Also, other args may need to be specified, like the learning rate `--lr`, batch size `--batch_size`, etc.
 See detailed args in the `Args Used` Section.
 
-In addition, the simplest way to reproduce our results is to copy all training args we used in the provided weights.
+## Reproducing Our Results
+
+The simplest way to reproduce our results is to copy all training args we used in the provided weights.
 For example, you can start a training of `Re` on `zara1` using the same args as we did by:
 
 ```bash
 python main.py --model re --restore_args ./weights/rezara1
 ```
 
+You can open a `Tensorboard` to see how losses and metrics change during training, by:
+
+```bash
+tensorboard --logdir ./logs
+```
+
 ## Playground
 
-You can run the following script to learn how the proposed `Re` works to handle social interactions in an interactive way by adding any manual neighbors.
+You can run the following commands to learn how the proposed `Re` works to handle social interactions in an interactive way by adding any manual neighbors.
 In addition to this, most of the visualizations shown in the paper are also drawn through it.
 Run the following command to start:
 
