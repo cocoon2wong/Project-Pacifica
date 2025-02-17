@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-19 20:20:02
+@LastEditTime: 2025-02-17 16:52:46
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -15,7 +15,7 @@ from qpid.training import Structure
 from qpid.utils import INIT_POSITION
 
 from .__args import ResonanceArgs
-from .__layers import SocialCircleLayer
+from .__layers import PoolingLayer, SocialCircleLayer
 from ._reBias import ReBiasLayer
 from ._resonance import ResonanceLayer
 from ._selfBias import SelfBiasLayer
@@ -90,15 +90,26 @@ class ResonanceModel(Model):
         if not self.re_args.learn_re_bias:
             return
 
-        # Layer to compute the resonance matrix (or SocialCircle)
-        if not self.re_args.use_original_socialcircle:
+        # Layer to compute the resonance matrix
+        # Conditions are used to conduct ablation studies
+        s = self.re_args.use_original_socialcircle
+        if s == 0:
             self.rc = ResonanceLayer(partitions=self.re_args.partitions,
                                      hidden_units=self.d,
                                      output_units=self.d,
                                      transform_layer=self.tr1)
-        else:
+        elif s == 1:
             self.rc = SocialCircleLayer(partitions=self.re_args.partitions,
                                         output_units=self.d)
+        elif s == 2:
+            self.rc = PoolingLayer(grids=self.re_args.partitions,
+                                   hidden_units=self.d,
+                                   output_units=self.d,
+                                   transform_layer=self.tr1)
+        else:
+            self.log(f'Wrong interaction representation type `{s}`!',
+                     level='error')
+            raise ValueError
 
         # Resonance Bias Layer
         self.b2 = ReBiasLayer(self.args,

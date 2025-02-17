@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-10-17 09:32:57
+@LastEditTime: 2025-02-17 15:38:52
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -117,11 +117,15 @@ class ResonanceArgs(EmptyArgs):
     @property
     def use_original_socialcircle(self) -> int:
         """
-        Choose to use the `ResonanceCircle` (default) or the original
-        `SocialCircle` when represent social interactions.
+        Choose the type of social-interaction-representation when training.
+        It accepts an integer value:
+        - `0`: Angle-based resonance pooling (default);
+        - `1`: SocialCircle;
+        - `2`: SocialPooling;
         """
         return self._arg('use_original_socialcircle', 0, argtype=STATIC,
-                         desc_in_model_summary='Use SocialCircle rather than ResonanceCircle')
+                         desc_in_model_summary='Social Interaction Type',
+                         other_names=['interaction_type'])
 
     @property
     def no_self_bias(self) -> int:

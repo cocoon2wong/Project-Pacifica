@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-15 14:54:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-12 16:01:48
+@LastEditTime: 2025-02-17 16:46:20
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -11,6 +11,7 @@ import numpy as np
 import torch
 
 from qpid.model import layers
+from qpid.model.layers.transfroms import _BaseTransformLayer
 from qpid.utils import get_mask
 
 
@@ -152,3 +153,84 @@ class SocialCircleLayer(torch.nn.Module):
 
         f_sc = self.ce(social_circle)
         return f_sc, social_circle
+
+
+class PoolingLayer(torch.nn.Module):
+
+    def __init__(self, grids: int,
+                 hidden_units: int,
+                 output_units: int,
+                 transform_layer: _BaseTransformLayer,
+                 range_gain: float = 2.0,
+                 *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.grid_length = int(grids ** 0.5)
+        assert self.grid_length % 2 == 0, 'Grid lengths should be even!'
+
+        self.range_gain = range_gain
+        self.d_h = hidden_units
+        self.d = output_units
+        self.T_layer = transform_layer
+
+        # Shapes
+        self.Trsteps_en, self.Trchannels_en = self.T_layer.Tshape
+
+        # Trajectory encoding (neighbors)
+        self.tre = layers.TrajEncoding(self.T_layer.Oshape[-1], hidden_units,
+                                       torch.nn.ReLU,
+                                       transform_layer=self.T_layer)
+
+        self.fc1 = layers.Dense(hidden_units*self.Trsteps_en,
+                                hidden_units,
+                                torch.nn.ReLU)
+        self.fc2 = layers.Dense(hidden_units, hidden_units, torch.nn.ReLU)
+        self.fc3 = layers.Dense(hidden_units, output_units, torch.nn.ReLU)
+
+    def forward(self, x_ego_2d: torch.Tensor,
+                x_nei_2d: torch.Tensor):
+
+        # Move the last point of trajectories to 0
+        x_ego_pure = (x_ego_2d - x_ego_2d[..., -1:, :])[..., None, :, :]
+        x_nei_pure = x_nei_2d - x_nei_2d[..., -1:, :]
+
+        # Embed trajectories (ego + neighbor) together and then split them
+        f_pack = self.tre(torch.concat([x_ego_pure, x_nei_pure], dim=-3))
+        f_ego = f_pack[..., :1, :, :]
+        f_nei = f_pack[..., 1:, :, :]
+
+        # Compute meta resonance features (for each neighbor)
+        # shape of the final output `f_re_meta`: (batch, N, d/2)
+        f = f_ego * f_nei   # -> (batch, N, obs, d)
+        f = torch.flatten(f, start_dim=-2, end_dim=-1)
+        f_re = self.fc3(self.fc2(self.fc1(f)))
+
+        # Compute features in the SocialPooling-like way
+        # Compute the length of each grid
+        vel = torch.norm(x_ego_2d[..., -1, :] - x_ego_2d[..., 0, :], dim=-1)
+        total_length = self.range_gain * vel
+        grid_interval = total_length / self.grid_length
+
+        grid_indices = x_nei_2d[:, ..., -1, :] - x_ego_2d[..., -1:, :]
+        grid_indices = torch.ceil(grid_indices/grid_interval[..., None, None])
+
+        grids = []
+        r = range(-self.grid_length//2, self.grid_length//2 + 1)
+        for i in r:
+            for j in r:
+                if i*j == 0:
+                    continue
+
+                _mask = (grid_indices -
+                         torch.tensor([[[i, j]]]).to(vel.device))
+                _mask = ((_mask[..., 0] == 0) *
+                         (_mask[..., 1] == 0)).to(torch.float32)
+
+                feature = torch.sum(f_re * _mask[..., None], dim=-2)
+                grids.append(feature)
+
+        # Shape of the final feature: (batch, grids, d)
+        grids = torch.stack(grids, dim=-2)
+
+        return grids, f_re
