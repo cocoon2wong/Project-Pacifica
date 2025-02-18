@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-17 15:38:52
+@LastEditTime: 2025-02-18 09:20:02
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -115,7 +115,7 @@ class ResonanceArgs(EmptyArgs):
                          desc_in_model_summary='Predict resonance-bias trajectories')
 
     @property
-    def use_original_socialcircle(self) -> int:
+    def interaction_type(self) -> int:
         """
         Choose the type of social-interaction-representation when training.
         It accepts an integer value:
@@ -124,8 +124,8 @@ class ResonanceArgs(EmptyArgs):
         - `2`: SocialPooling;
         """
         return self._arg('use_original_socialcircle', 0, argtype=STATIC,
-                         desc_in_model_summary='Social Interaction Type',
-                         other_names=['interaction_type'])
+                         desc_in_model_summary='Social Interaction Type (0 = Re)',
+                         other_names=['use_original_socialcircle'])
 
     @property
     def no_self_bias(self) -> int:

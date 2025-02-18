@@ -92,7 +92,7 @@ class ResonanceModel(Model):
 
         # Layer to compute the resonance matrix
         # Conditions are used to conduct ablation studies
-        s = self.re_args.use_original_socialcircle
+        s = self.re_args.interaction_type
         if s == 0:
             self.rc = ResonanceLayer(partitions=self.re_args.partitions,
                                      hidden_units=self.d,
