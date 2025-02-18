@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-15 14:54:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-18 16:07:42
+@LastEditTime: 2025-02-18 17:16:19
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -214,7 +214,7 @@ class SocialPoolingLayer(torch.nn.Module):
         f = torch.flatten(f, start_dim=-2, end_dim=-1)
         f_re = self.fc3(self.fc2(self.fc1(f)))
 
-        # Compute features in the SocialPooling-like way
+        # Gather features in the SocialPooling-like way
         # Compute the length of each grid
         vel = torch.norm(x_ego_2d[..., -1, :] - x_ego_2d[..., 0, :], dim=-1)
         total_length = self.range_gain * vel
@@ -248,3 +248,64 @@ class SocialPoolingLayer(torch.nn.Module):
         grids = torch.stack(grids, dim=-2)
 
         return grids, f_re
+
+
+class SocialGCNLayer(torch.nn.Module):
+    """
+    A layer to gather resonance features with a GCN.
+    It is only used in ablation studies.
+    """
+
+    def __init__(self, hidden_units: int,
+                 output_units: int,
+                 transform_layer: _BaseTransformLayer,
+                 *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        # Settings
+        self.d_h = hidden_units
+        self.d = output_units
+        self.T_layer = transform_layer
+
+        # Shapes
+        self.Trsteps_en, self.Trchannels_en = self.T_layer.Tshape
+
+        # Trajectory encoding (neighbors)
+        self.tre = layers.TrajEncoding(self.T_layer.Oshape[-1], hidden_units,
+                                       torch.nn.ReLU,
+                                       transform_layer=self.T_layer)
+
+        self.fc1 = layers.Dense(hidden_units, hidden_units, torch.nn.ReLU)
+        self.fc2 = layers.Dense(hidden_units, hidden_units, torch.nn.ReLU)
+        self.fc3 = layers.Dense(hidden_units, output_units, torch.nn.ReLU)
+
+        # GCN layers
+        self.adj_fc1 = layers.Dense(output_units, hidden_units, torch.nn.ReLU)
+        self.adj_fc2 = layers.Dense(hidden_units, 1, torch.nn.Tanh)
+        self.gcn = layers.GraphConv(output_units, output_units, torch.nn.ReLU)
+
+    def forward(self, x_ego_2d: torch.Tensor,
+                x_nei_2d: torch.Tensor):
+
+        # Move the last point of trajectories to 0
+        x_ego_pure = (x_ego_2d - x_ego_2d[..., -1:, :])[..., None, :, :]
+        x_nei_pure = x_nei_2d - x_nei_2d[..., -1:, :]
+
+        # Embed trajectories (ego + neighbor) together and then split them
+        f_pack = self.tre(torch.concat([x_ego_pure, x_nei_pure], dim=-3))
+        f_ego = f_pack[..., :1, :, :]
+        f_nei = f_pack[..., 1:, :, :]
+
+        # Compute meta resonance features (for each neighbor)
+        # shape of the final output `f_re_meta`: (batch, N, d/2)
+        f = f_ego * f_nei                       # (batch, N, steps, d)
+        f_re = self.fc3(self.fc2(self.fc1(f)))
+        f_re = torch.transpose(f_re, -3, -2)    # (batch, steps, N, d)
+
+        # Gather features with GCN
+        adj = self.adj_fc2(self.adj_fc1(f_re))  # (batch, steps, N, 1)
+        adj = torch.transpose(adj, -1, -2)      # (batch, steps, 1, N)
+        f_gcn = self.gcn(features=f_re, adjMatrix=adj)
+
+        return f_gcn[..., 0, :], None           # (batch, steps, d)

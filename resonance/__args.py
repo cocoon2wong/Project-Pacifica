@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-18 15:32:06
+@LastEditTime: 2025-02-18 17:15:32
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -122,6 +122,7 @@ class ResonanceArgs(EmptyArgs):
         - `0`: Angle-based resonance pooling (default);
         - `1`: SocialCircle;
         - `2`: SocialPooling;
+        - `3`: GCN.
         """
         return self._arg('interaction_type', 0, argtype=STATIC,
                          desc_in_model_summary='Social Interaction Type (0 = Re)',
@@ -151,6 +152,7 @@ class ResonanceArgs(EmptyArgs):
                      'It accepts either `linear` or `speed`.',
                      level='error', raiseError=ValueError)
 
-        if self.partitions <= 0:
+        if ((self.partitions <= 0) and
+            (self.interaction_type != 3)):
             self.log(f'Illegal partition settings ({self.partitions})!',
                      level='error', raiseError=ValueError)
