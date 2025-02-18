@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-18 09:20:02
+@LastEditTime: 2025-02-18 15:32:06
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -123,7 +123,7 @@ class ResonanceArgs(EmptyArgs):
         - `1`: SocialCircle;
         - `2`: SocialPooling;
         """
-        return self._arg('use_original_socialcircle', 0, argtype=STATIC,
+        return self._arg('interaction_type', 0, argtype=STATIC,
                          desc_in_model_summary='Social Interaction Type (0 = Re)',
                          other_names=['use_original_socialcircle'])
 

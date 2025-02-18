@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-15 14:54:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-17 16:46:20
+@LastEditTime: 2025-02-18 16:07:42
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -13,6 +13,8 @@ import torch
 from qpid.model import layers
 from qpid.model.layers.transfroms import _BaseTransformLayer
 from qpid.utils import get_mask
+
+NAN = 1e8
 
 
 class SocialCircleLayer(torch.nn.Module):
@@ -155,7 +157,11 @@ class SocialCircleLayer(torch.nn.Module):
         return f_sc, social_circle
 
 
-class PoolingLayer(torch.nn.Module):
+class SocialPoolingLayer(torch.nn.Module):
+    """
+    A layer to gather resonance features in a Social-Pooling-like way.
+    It is only used in ablation studies.
+    """
 
     def __init__(self, grids: int,
                  hidden_units: int,
@@ -166,9 +172,11 @@ class PoolingLayer(torch.nn.Module):
 
         super().__init__(*args, **kwargs)
 
+        # Number of grids in each row/column
         self.grid_length = int(grids ** 0.5)
         assert self.grid_length % 2 == 0, 'Grid lengths should be even!'
 
+        # Settings
         self.range_gain = range_gain
         self.d_h = hidden_units
         self.d = output_units
@@ -212,16 +220,22 @@ class PoolingLayer(torch.nn.Module):
         total_length = self.range_gain * vel
         grid_interval = total_length / self.grid_length
 
+        # Index of each grid (as float numbers)
         grid_indices = x_nei_2d[:, ..., -1, :] - x_ego_2d[..., -1:, :]
+        grid_indices = grid_indices/grid_interval[..., None, None]
+
+        # Remove self-neighbor
+        o_mask = (torch.sum(grid_indices ** 2, dim=-1,
+                  keepdim=True) == 0).to(torch.float32)
+        grid_indices = (NAN * torch.ones_like(grid_indices) * o_mask +
+                        grid_indices * (1 - o_mask))
+
         grid_indices = torch.ceil(grid_indices/grid_interval[..., None, None])
 
         grids = []
-        r = range(-self.grid_length//2, self.grid_length//2 + 1)
+        r = range(-self.grid_length//2 + 1, self.grid_length//2 + 1)
         for i in r:
             for j in r:
-                if i*j == 0:
-                    continue
-
                 _mask = (grid_indices -
                          torch.tensor([[[i, j]]]).to(vel.device))
                 _mask = ((_mask[..., 0] == 0) *
