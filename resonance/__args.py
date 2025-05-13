@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-18 17:15:32
+@LastEditTime: 2025-05-13 15:35:07
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -41,7 +41,8 @@ class ResonanceArgs(EmptyArgs):
         - `db2`: DB2 wavelet transform
         """
         return self._arg('T', 'fft', argtype=STATIC, short_name='T',
-                         desc_in_model_summary='Transform type (trajectory)')
+                         desc_in_model_summary=('Model Settings',
+                                                'Transform type (trajectory)'))
 
     @property
     def Tr(self) -> str:
@@ -56,7 +57,8 @@ class ResonanceArgs(EmptyArgs):
         - `db2`: DB2 wavelet transform
         """
         return self._arg('Tr', 'fft', argtype=STATIC, short_name='Tr',
-                         desc_in_model_summary='Transform type (resonance)')
+                         desc_in_model_summary=('Model Settings',
+                                                'Transform type (resonance)'))
 
     @property
     def interp(self) -> str:
@@ -95,7 +97,8 @@ class ResonanceArgs(EmptyArgs):
         when this arg is set to `1`.
         """
         return self._arg('disable_linear_base', 0, argtype=STATIC,
-                         desc_in_model_summary="NOT using the linear base trajectory")
+                         desc_in_model_summary=('Vibrations\' Settings',
+                                                'NOT using the linear base trajectory'))
 
     @property
     def learn_self_bias(self) -> int:
@@ -104,7 +107,8 @@ class ResonanceArgs(EmptyArgs):
         """
         return self._arg('learn_self_bias', 1, argtype=STATIC,
                          other_names=['compute_non_social_bias'],
-                         desc_in_model_summary='Predict self-bias trajectories')
+                         desc_in_model_summary=('Vibrations\' Settings',
+                                                'Predict self-bias trajectories'))
 
     @property
     def learn_re_bias(self) -> int:
@@ -112,7 +116,8 @@ class ResonanceArgs(EmptyArgs):
         Choose whether to compute the re-bias term when training.
         """
         return self._arg('learn_re_bias', 1, argtype=STATIC,
-                         desc_in_model_summary='Predict resonance-bias trajectories')
+                         desc_in_model_summary=('Vibrations\' Settings',
+                                                'Predict resonance-bias trajectories'))
 
     @property
     def interaction_type(self) -> int:
@@ -125,7 +130,8 @@ class ResonanceArgs(EmptyArgs):
         - `3`: GCN.
         """
         return self._arg('interaction_type', 0, argtype=STATIC,
-                         desc_in_model_summary='Social Interaction Type (0 = Re)',
+                         desc_in_model_summary=('Model Settings',
+                                                'Social Interaction Type (0 = Re)'),
                          other_names=['use_original_socialcircle'])
 
     @property
