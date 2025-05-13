@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-09 20:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-19 20:15:22
+@LastEditTime: 2025-05-13 11:04:10
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -91,6 +91,7 @@ class SelfBiasLayer(torch.nn.Module):
     def forward(self, linear_fit: torch.Tensor,
                 f_diff: torch.Tensor,
                 waypoints_indices: torch.Tensor,
+                fixed_noise: torch.Tensor | None = None,
                 training=None, mask=None, *args, **kwargs):
 
         # Sampling random noise vectors
@@ -101,8 +102,13 @@ class SelfBiasLayer(torch.nn.Module):
         # First predict the overall waypoint-bias (on several waypoints)
         for _ in range(repeats):
             # Assign random noise and embedding -> (batch, steps, d)
-            z = torch.normal(mean=0, std=1,
-                             size=list(f_diff.shape[:-1]) + [self.d_id])
+            if fixed_noise is None:
+                z = torch.normal(mean=0, std=1,
+                                size=list(f_diff.shape[:-1]) + 
+                                     [self.d_id])
+            else:
+                z = fixed_noise[..., :f_diff.shape[-2], :]
+
             f_z = self.ie(z.to(linear_fit.device))
 
             # (batch, steps, 2*d)

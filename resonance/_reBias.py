@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-09 20:28:02
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-11-19 20:15:46
+@LastEditTime: 2025-05-13 10:55:23
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -82,6 +82,7 @@ class ReBiasLayer(torch.nn.Module):
     def forward(self, x_ego_diff: torch.Tensor,
                 f_diff: torch.Tensor,
                 re_matrix: torch.Tensor,
+                fixed_noise: torch.Tensor | None = None,
                 training=None, mask=None, *args, **kwargs):
 
         # Pad features to keep the compatible tensor shape
@@ -99,8 +100,13 @@ class ReBiasLayer(torch.nn.Module):
 
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d)
-            z = torch.normal(mean=0, std=1,
-                             size=list(f_behavior.shape[:-1]) + [self.d_id])
+            if fixed_noise is None:
+                z = torch.normal(mean=0, std=1,
+                                 size=list(f_behavior.shape[:-1]) + 
+                                      [self.d_id])
+            else:
+                z = fixed_noise
+                
             re_f_z = self.ie(z.to(x_ego_diff.device))
 
             # (batch, steps, 2*d)

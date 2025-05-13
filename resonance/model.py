@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:18:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-18 17:16:46
+@LastEditTime: 2025-05-13 11:11:21
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -145,10 +145,20 @@ class ResonanceModel(Model):
         # Encode features of ego trajectories (diff encoding)
         f_diff, linear_fit, linear_base = self.linear(x_ego, agent_types)
 
+        # Sample noise (if `fixed_noise` is enabled)
+        if self.re_args.fixed_noise:
+            z = torch.normal(mean=0, std=1,
+                             size=[x_ego.shape[0],
+                                   max(self.re_args.partitions,
+                                       self.b2.Trsteps_en),
+                                   self.args.noise_depth])
+        else:
+            z = None
+
         # Predict the self-bias trajectory
         if self.re_args.learn_self_bias:
             self_bias = self.b1(linear_fit, f_diff,
-                                self.output_pred_steps, training)
+                                self.output_pred_steps, z, training)
         else:
             self_bias = 0
 
@@ -162,7 +172,7 @@ class ResonanceModel(Model):
 
             # Compute the resonance-bias trajectory
             re_bias = self.b2(x_ego - linear_fit,
-                              f_diff, re_matrix, training)
+                              f_diff, re_matrix, z, training)
         else:
             re_bias = 0
 

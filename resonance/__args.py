@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-10-08 19:11:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2025-02-18 17:15:32
+@LastEditTime: 2025-05-13 11:07:12
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -143,6 +143,15 @@ class ResonanceArgs(EmptyArgs):
         It only works when testing.
         """
         return self._arg('no_re_bias', 0, argtype=TEMPORARY)
+    
+    @property
+    def fixed_noise(self) -> int:
+        """
+        Controls whether to use the shared noise for both the self-bias
+        and the re-bias when training and testing models.
+        """
+        return self._arg('fixed_noise', 0, argtype=STATIC,
+                         desc_in_model_summary="Use the shared noise vector")
 
     def _init_all_args(self):
         super()._init_all_args()
